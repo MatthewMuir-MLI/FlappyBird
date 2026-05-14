@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore
+        run: dotnet restore tests/FlappyBird.Tests/FlappyBird.Tests.csproj
+      - name: Test
+        run: dotnet test tests/FlappyBird.Tests/FlappyBird.Tests.csproj --no-restore --logger "console;verbosity=detailed"
+
+  screenshot:
+    name: Headless gameplay screenshot
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: 4.6.2-stable
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install Godot Mono (Linux)
+        run: |
+          set -e
+          curl -fsSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_mono_linux_x86_64.zip"
+          unzip -q godot.zip
+          BIN_DIR="$(pwd)/Godot_v${GODOT_VERSION}_mono_linux_x86_64"
+          chmod +x "${BIN_DIR}/Godot_v${GODOT_VERSION}_mono_linux.x86_64"
+          sudo ln -sf "${BIN_DIR}/Godot_v${GODOT_VERSION}_mono_linux.x86_64" /usr/local/bin/godot
+          godot --version
+
+      - name: Install xvfb and Vulkan software renderer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb mesa-vulkan-drivers libvulkan1
+
+      - name: Import Godot project
+        run: godot --headless --import
+
+      - name: Build C# game project
+        run: dotnet build FlappyBird.csproj --configuration Debug
+
+      - name: Capture Main scene screenshot
+        run: |
+          set -e
+          mkdir -p artifacts
+          OUT="${GITHUB_WORKSPACE}/artifacts/main-scene.png"
+          xvfb-run -a -s "-screen 0 1080x1920x24" \
+            godot --rendering-driver vulkan --quit-after 240 res://scenes/Main.tscn \
+              -- --capture-screenshot "${OUT}"
+          ls -la artifacts/
+          test -s "${OUT}"
+
+      - name: Upload screenshot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gameplay-screenshot
+          path: artifacts/main-scene.png
+          if-no-files-found: error

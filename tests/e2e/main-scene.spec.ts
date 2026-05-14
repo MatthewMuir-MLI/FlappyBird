@@ -62,6 +62,31 @@ test('clicking the canvas flaps the bird upward versus no input control', async 
   await page.screenshot({ path: FLAP_SCREENSHOT_PATH, fullPage: false });
 });
 
+test('sprites are loaded and clouds populate the sky', async ({ page }) => {
+  await page.goto('/FlappyBird/');
+  await page.waitForSelector('canvas[data-phaser-ready="true"]', { timeout: 10_000 });
+
+  const canvas = page.locator('canvas');
+
+  // All three textures (bird, pipe, cloud) registered with Phaser's texture cache.
+  await expect(canvas).toHaveAttribute('data-sprites-loaded', 'true');
+
+  // Three cloud sprites should be drawn behind everything else.
+  await expect(canvas).toHaveAttribute('data-cloud-count', '3');
+
+  // Sanity check: the asset PNGs are actually fetched (not 404'd) when the
+  // page loads. If any image returns non-200, the texture would still register
+  // in Phaser's cache as a fallback, so we verify the network round-trip too.
+  const responses = await Promise.all(
+    ['bird.png', 'pipe.png', 'cloud.png'].map((name) =>
+      page.request.get(`/FlappyBird/assets/${name}`)
+    )
+  );
+  for (const r of responses) {
+    expect(r.status()).toBe(200);
+  }
+});
+
 test('reactive flaps can pass one pipe and show score 1', async ({ page }) => {
   await page.goto('/FlappyBird/');
   await page.waitForSelector('canvas[data-phaser-ready="true"]', { timeout: 10_000 });

@@ -335,7 +335,7 @@ negatives block yet.
 
 ### 3. Background prop — cloud (Slice 7)
 
-**Status:** prompt drafted, awaiting generation.
+**Status:** approved (`v1-c`).
 
 **Target:** repeating background element. Picked cloud over building
 or tree because clouds are the classic Flappy parallax element, the
@@ -343,7 +343,7 @@ shape reads instantly at small size, and a cloud locks the world tone
 less aggressively than a building or tree would — leaving room for
 ground props at later rungs.
 
-**Subject prompt v1:**
+**Subject prompt v1 (the one that worked):**
 
 ```
 A single decorative cloud rendered as a Belle-Epoque lithograph:
@@ -355,13 +355,22 @@ scrolls cleanly across the sky.
 ```
 
 **Full request:** `/v1/images/edits` with `public/assets/bird.png`
-passed as the `image[]` reference.
+passed as the `image[]` reference, same "match the visual style of
+the reference image exactly" preamble as the pipe.
 
 **Iteration log:**
-- v1 — drafted, not yet run.
+- v1 — three medium-quality variants generated; `v1-c` chosen
+  (wider/flatter silhouette with articulated bumps along the top and
+  the heaviest olive underside shadow of the three). `v1-a` rejected
+  for a hollow ivory center — sky would have shown through during
+  parallax scroll, which is a gameplay-incompatible rendering choice
+  even though the silhouette read fine in isolation. `v1-b` rejected
+  on aesthetics (too cartoony, less visual weight).
 
-**Output (planned):** `public/assets/cloud.png` after variant
-selection.
+**Output:** `public/assets/cloud.png` (chosen). Lesson logged: when
+an asset has a transparency-implication for gameplay (parallax over
+a colored sky), spell out "solid body, opaque fill" in the subject
+prompt — same lesson as the pipe's tile-friendliness clause.
 
 ## How to add a new asset (procedure)
 

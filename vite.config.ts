@@ -20,7 +20,15 @@ export default defineConfig(({ mode }) => ({
     {
       name: 'copy-root-manifest',
       writeBundle: () => {
-        copyFileSync(resolve(__dirname, 'manifest.json'), resolve(__dirname, 'dist', 'manifest.json'));
+        const source = resolve(__dirname, 'manifest.json');
+        const target = resolve(__dirname, 'dist', 'manifest.json');
+        try {
+          copyFileSync(source, target);
+        } catch (error) {
+          throw new Error(
+            `Failed to copy manifest.json to dist/. Ensure manifest.json exists at project root: ${String(error)}`
+          );
+        }
       },
     },
   ],

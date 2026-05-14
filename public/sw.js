@@ -12,7 +12,10 @@ const PRECACHE_URLS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)).then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -37,11 +40,13 @@ self.addEventListener('fetch', (event) => {
       return fetch(event.request).then((response) => {
         if (
           response.ok &&
-          event.request.url.startsWith(self.location.origin) &&
-          event.request.destination !== 'document'
+          event.request.url.startsWith(self.location.origin)
         ) {
           const responseClone = response.clone();
-          void caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          void caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put(event.request, responseClone))
+            .catch((error) => console.error('cache-put-failed', error));
         }
         return response;
       });

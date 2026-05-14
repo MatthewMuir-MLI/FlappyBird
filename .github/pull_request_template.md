@@ -13,14 +13,11 @@ Closes #
 
 ## Verification
 - [ ] Failing test written before the implementation (TDD)
-- [ ] `dotnet test` -> all pass
-- [ ] `dotnet build FlappyBird.csproj` -> 0 errors, 0 warnings
+- [ ] `npm run lint` clean
+- [ ] `npm run test` all pass
+- [ ] `npm run test:e2e` all pass locally (CI does not run e2e)
 - [ ] CI green on this PR
-- [ ] Screenshot artifact from CI looks correct
 - [ ] If a slice: `docs/SLICES.md` "Shipped" section updated
-
-## Screenshot
-<!-- Embed the captured frame from the `gameplay-screenshot` artifact, or note the run URL. -->
 
 ## Standards check
 - [ ] No new gameplay code without a failing test first

@@ -3,7 +3,7 @@
 > A Flappy Bird-style web game built almost entirely by AI agents. Matthew Muir is the game director — he reviews and merges; agents do the typing.
 
 **Live:** https://matthewmuir-mli.github.io/FlappyBird/
-**Stack:** Phaser 3 · TypeScript (strict) · Vite · Vitest · Playwright · Biome · GitHub Pages
+**Stack:** Phaser 4 · TypeScript (strict) · Vite · Vitest · Playwright · Biome · GitHub Pages
 **License:** MIT
 
 ---
@@ -247,8 +247,8 @@ Tech-debt issue [#4](https://github.com/MatthewMuir-MLI/FlappyBird/issues/4) tra
 
 ## Project status (at the time of writing)
 
-Shipped: pivot + Slice 1 (Hello Phaser) + Slice 2 (Bird falls).
+Shipped: pivot + Slice 1 (Hello Phaser) + Slice 2 (Bird falls) + Slice 3 (Tap to flap) + Phaser 4 upgrade.
 
-Backlog: Slices 3–10 are filed as open issues; Slice 3 (Tap to flap) is next.
+Backlog: Slices 4–10 are filed as open issues. Slice 4 (One pipe + collision) is next. Slice 7 (Real sprites) is blocked on [docs/AESTHETIC.md](docs/AESTHETIC.md) being filled in.
 
 Tech debt: [#4](https://github.com/MatthewMuir-MLI/FlappyBird/issues/4) Node.js 20 deprecation in CI actions. Not blocking; address before Sep 2026.

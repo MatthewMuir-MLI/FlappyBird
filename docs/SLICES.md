@@ -18,6 +18,40 @@ Slice format:
 
 ## Shipped
 
+### Slice 3 — Tap to flap
+**Goal:** Tapping the canvas (or clicking, or pressing SPACE/Z) applies an upward impulse to the bird on top of the slice-2 falling physics.
+**Shipped:** 2026-05-14, PR #32
+**What's in it:**
+- `src/core/flight.ts` — new pure module. `flap(state)` sets `state.velocity.y = -450` (px/sec, upward in canvas coords). No Phaser imports, fully Vitest-testable.
+- `src/scenes/MainScene.ts` — one shared flap action wired to three inputs: `pointerdown`, `keydown-SPACE`, `keydown-Z`. Same code path serves touch, mouse, and keyboard so Playwright can drive flaps either way.
+- `tests/unit/flight.test.ts` — 2 Vitest cases (flap sets upward velocity; flap then gravity ticks produces rise-then-fall).
+- `tests/e2e/main-scene.spec.ts` — keeps the slice-2 gravity-fall assertion and adds a flap-vs-no-input comparison at equal frame count. Mid-flap screenshot captured.
+
+**Verified:**
+- CI green on PR #32 (Unit tests 10/10 + Headless gameplay screenshot pass).
+- Matthew merged from phone; live site updated and flap works on iOS Safari and desktop Chromium.
+
+**Learned:**
+- **One physics model + flap-as-velocity-mutation** kept the rebase against slice 2 trivial when slice 2 landed first. Avoided introducing a parallel "flap state" path.
+- **Unifying pointer + keyboard through one input action** is cleaner than two listeners that both call `flap()`. Same lesson as web HID work — one logical action, many physical bindings.
+
+**Deferred:**
+- Feel-tuning the gravity/impulse balance — done together with pipe difficulty in a later slice.
+- Wing-flap visual animation — Slice 7 (real sprites).
+- Flap sound — Slice 8 (audio).
+
+---
+
+### chore — Phaser 3.90 → 4.1 'Salusa'
+**Shipped:** 2026-05-14, PR #35
+**What:** Dependency bump only. Zero source code changes — our entire v3 API surface (`new Phaser.Game`, `Phaser.Scene`, `add.rectangle`, `add.text`, `Phaser.Scale.FIT`, `update(time, delta)`, `this.scale.width/height`) is unchanged in v4.
+**Why:** The original pivot picked Phaser 3 on a stale assumption that v4 was still pre-release. v4.0 actually shipped in April 2026 and v4.1 followed shortly. Bumping now, while our Phaser surface area is tiny, beat migrating later after sprites/audio/input scope grew.
+**Bundle impact:** ~10% larger gzipped (340 KB → 376 KB) from the renderer rewrite. Acceptable for the SpriteGPULayer + unified filter pipeline we'll lean on in Slice 7.
+
+**Verified:** Lint, Vitest 10/10, Playwright pass, build all green locally and in CI. Live site unchanged visually.
+
+---
+
 ### Slice 2 — Bird falls
 **Goal:** A bird (placeholder geometry) falls under gravity in the Main scene. No input yet.
 **Shipped:** 2026-05-14, PR #33

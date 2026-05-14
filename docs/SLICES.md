@@ -18,6 +18,32 @@ Slice format:
 
 ## Shipped
 
+### Slice 2 — Bird falls
+**Goal:** A bird (placeholder geometry) falls under gravity in the Main scene. No input yet.
+**Shipped:** 2026-05-14, PR #33
+**What's in it:**
+- `src/core/birdPhysics.ts` — pure semi-implicit Euler simulation. `step(state, dt, constants)` is the testable contract. No Phaser imports.
+- `src/scenes/MainScene.ts` — replaces the slice-1 title text with a 48×48 white square bird starting at (270, 240). Steps the simulation each `update()` and mirrors `position` to the sprite. Publishes `data-bird-y` attribute on the canvas for deterministic Playwright assertions.
+- `tests/unit/birdPhysics.test.ts` — 6 Vitest cases (gravity moves y, velocity grows, x untouched, zero-dt no-op, deterministic, accumulation over 60 steps).
+- `tests/e2e/main-scene.spec.ts` — reads `data-bird-y` before/after 500ms wait, asserts fall ≥ 50px. Screenshot captured.
+- `.gitattributes` — enforce LF EOL on text files so Biome formatting stays stable across Windows/Linux.
+
+**Verified:**
+- CI green on PR #33 (Unit tests 8/8 + Headless gameplay screenshot 1/1).
+- CI-captured screenshot shows the bird mid-fall in the lower-middle of the canvas, matching local.
+
+**Learned:**
+- **Semi-implicit Euler is required for "instantly-responsive" feel.** Explicit Euler doesn't move position on the first step from rest (velocity is 0), which fails both the human intuition and any e2e test that expects the bird to start falling immediately. Switched after the first test attempt failed.
+- **`data-bird-y` on the canvas** is a clean pattern for exposing game state to headless tests without leaking via `window`. Set in `_Ready` then on every frame.
+- **Biome's default LF EOL** fights Windows CRLF on first commit. `.gitattributes` with `eol=lf` makes this a non-issue forever.
+
+**Deferred:**
+- Ground / floor collision — no game-over yet; bird falls off-screen. Picked up in Slice 4.
+- Tuning gravity for feel — done together with flap impulse in Slice 3.
+- A `Vec2` math library — three-line struct literals are enough for now.
+
+---
+
 ### chore — Pivot from Godot+Android to Phaser+web
 **Shipped:** 2026-05-14
 **ADR:** #21

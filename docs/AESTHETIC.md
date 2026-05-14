@@ -291,31 +291,77 @@ negatives block.
 
 ### 2. Pipe (Slice 7)
 
-**Status:** awaits bird approval so it can be generated with the bird
-PNG as a reference image.
+**Status:** approved (`v1-c`).
 
 **Target:** tall vertical obstacle, transparent PNG. Generate at
-1024×1024 and either crop / tile to the in-game aspect, or generate
-two sprites (pipe-body + pipe-cap) and tile vertically in Phaser.
+1024×1024; Phaser scales / crops to the in-game aspect. We trust
+the bird's chosen variant as the style reference via
+`/v1/images/edits` instead of hand-tuning the prompt.
 
-**Subject prompt v0 (refine after bird ships):**
+**Subject prompt v1 (the one that worked):**
 
 ```
 A tall vertical green obstacle column with a flared decorative cap at
-one end, like the trunk of a stylized tree or a Belle-Époque pillar.
-Olive green body with ivory highlights. Heavy black outline.
+one end, like the trunk of a stylized tree or a Belle-Epoque pillar.
+Olive green body with ivory highlights and an oxblood-red detail band
+where the cap flares. Heavy black outline. The column should tile
+cleanly when stacked vertically.
 ```
 
-### 3. Background prop (Slice 7)
+**Full request:** `/v1/images/edits` with `public/assets/bird.png`
+passed as the `image[]` reference, plus the "match the visual style
+of the reference image exactly" preamble. Same model / size / quality
+/ background / output as the bird.
 
-**Status:** awaits bird approval.
+**Iteration log:**
+- v1 — three medium-quality variants generated; `v1-c` chosen (tall
+  flared cap with oxblood neck band, no pedestal base; the only one
+  of the three that's tile-friendly for off-screen-bottom extension).
+  `v1-a` and `v1-b` had decorative pedestals — read fine as ornaments
+  but break the "infinite stem" illusion the game needs.
 
-**Target:** repeating background element. Candidates: a stylized period
-building silhouette, a Belle-Époque-style cloud, a tree.
+**Output:** `public/assets/pipe.png` (chosen). Lesson for future
+asset prompts: when an asset has gameplay-driven tiling requirements,
+state them in the subject prompt explicitly, not just in the doc
+prose around it.
 
-**Subject prompt v0:**
+**Cohesion check:** the bird-as-reference mechanism held. All three
+pipe variants kept the bird's olive-yellow body, oxblood accent,
+ivory highlights, heavy black outline, and paper grain without
+explicit per-asset re-statement of the palette. The faint "sticker
+edge" artifact from the bird also did not propagate strongly to the
+pipe — encouraging signal that we don't need to suppress it in the
+negatives block yet.
 
-_TBD after bird ships and the world tone is clearer._
+### 3. Background prop — cloud (Slice 7)
+
+**Status:** prompt drafted, awaiting generation.
+
+**Target:** repeating background element. Picked cloud over building
+or tree because clouds are the classic Flappy parallax element, the
+shape reads instantly at small size, and a cloud locks the world tone
+less aggressively than a building or tree would — leaving room for
+ground props at later rungs.
+
+**Subject prompt v1:**
+
+```
+A single decorative cloud rendered as a Belle-Epoque lithograph:
+rounded puffy silhouette with a flat ivory fill and a subtle
+olive-green shadow gradient on the underside. Heavy black outline
+curving in soft ornamental arcs. Reads instantly as a cloud at small
+size on a phone. Horizontally elongated so it tiles and parallax-
+scrolls cleanly across the sky.
+```
+
+**Full request:** `/v1/images/edits` with `public/assets/bird.png`
+passed as the `image[]` reference.
+
+**Iteration log:**
+- v1 — drafted, not yet run.
+
+**Output (planned):** `public/assets/cloud.png` after variant
+selection.
 
 ## How to add a new asset (procedure)
 

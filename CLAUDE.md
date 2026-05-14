@@ -3,7 +3,7 @@
 Our take on Flappy Bird. Web game published to GitHub Pages. No ads, no microtransactions, no analytics. First step into fully agentic game programming.
 
 ## Stack
-- **Engine:** Phaser 3 (TypeScript). 2D, web-native, MIT.
+- **Engine:** Phaser 4 (TypeScript). 2D, web-native, MIT.
 - **Build:** Vite.
 - **Tests:** Vitest (unit) + Playwright (headless gameplay + screenshots).
 - **Lint/format:** Biome.

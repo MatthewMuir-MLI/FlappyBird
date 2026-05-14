@@ -9,7 +9,7 @@ You are an AI coding agent (Claude Code, GitHub Copilot Coding Agent, or similar
 4. [ADR-001](https://github.com/MatthewMuir-MLI/FlappyBird/issues/21) if you wonder why this is Phaser+web and not Godot+Android.
 
 ## Stack
-- Phaser 3 + TypeScript (strict). Vite. Vitest. Playwright. Biome. GitHub Pages.
+- Phaser 4 + TypeScript (strict). Vite. Vitest. Playwright. Biome. GitHub Pages.
 - Node 22 LTS in CI; any recent Node locally is fine.
 - `src/core/` is pure logic with no Phaser imports — unit-testable with Vitest.
 - `src/scenes/` is the Phaser side. Each scene wires Core state to the rendered canvas.

@@ -42,6 +42,7 @@ interface PipeSpritePair {
 export class MainScene extends Phaser.Scene {
   private gameState!: GameState;
   private birdSprite!: Phaser.GameObjects.Rectangle;
+  private scoreText!: Phaser.GameObjects.Text;
   private pipeSprites = new Map<number, PipeSpritePair>();
   private birdFrame = 0;
 
@@ -69,6 +70,13 @@ export class MainScene extends Phaser.Scene {
         BIRD_COLOR
       )
       .setOrigin(0.5);
+    this.scoreText = this.add
+      .text(CANVAS_WIDTH / 2, 24, '0', {
+        fontFamily: 'Arial',
+        fontSize: '64px',
+        color: '#ffffff',
+      })
+      .setOrigin(0.5, 0);
 
     const flapAction = (): void => {
       if (this.gameState.gameOver) return;
@@ -89,6 +97,7 @@ export class MainScene extends Phaser.Scene {
 
     this.birdSprite.setPosition(this.gameState.bird.position.x, this.gameState.bird.position.y);
     this.syncPipeSprites();
+    this.scoreText.setText(String(this.gameState.score));
 
     this.birdFrame += 1;
     this.syncCanvasState();
@@ -137,5 +146,6 @@ export class MainScene extends Phaser.Scene {
     this.game.canvas.setAttribute('data-bird-frame', String(this.birdFrame));
     this.game.canvas.setAttribute('data-game-over', this.gameState.gameOver ? 'true' : 'false');
     this.game.canvas.setAttribute('data-pipe-count', String(this.gameState.pipes.length));
+    this.game.canvas.setAttribute('data-score-text', this.scoreText.text);
   }
 }

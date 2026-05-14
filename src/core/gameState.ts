@@ -1,12 +1,15 @@
 import { aabbsOverlap, birdAABB } from './aabb';
 import { type BirdState, step as stepBird } from './birdPhysics';
 import { nextGapY, type Pipe, spawnPipe, stepPipe } from './pipe';
+import { scorePassedPipes } from './score';
 
 export interface GameState {
   bird: BirdState;
   pipes: Pipe[];
   pipesSpawned: number;
   pixelsUntilNextSpawn: number;
+  score: number;
+  scoredPipeIds: number[];
   gameOver: boolean;
 }
 
@@ -28,6 +31,8 @@ export function initialGameState(bird: BirdState, pixelsUntilFirstSpawn = 0): Ga
     pipes: [],
     pipesSpawned: 0,
     pixelsUntilNextSpawn: pixelsUntilFirstSpawn,
+    score: 0,
+    scoredPipeIds: [],
     gameOver: false,
   };
 }
@@ -60,12 +65,15 @@ export function step(state: GameState, dtSeconds: number, c: GameConstants): Gam
 
   const box = birdAABB(nextBird);
   const collided = pipes.some((p) => aabbsOverlap(box, p.top) || aabbsOverlap(box, p.bottom));
+  const scoreUpdate = scorePassedPipes(nextBird.position.x, pipes, state.scoredPipeIds, collided);
 
   return {
     bird: nextBird,
     pipes,
     pipesSpawned,
     pixelsUntilNextSpawn,
+    score: state.score + scoreUpdate.score,
+    scoredPipeIds: scoreUpdate.scoredPipeIds,
     gameOver: collided,
   };
 }

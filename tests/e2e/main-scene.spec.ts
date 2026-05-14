@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test';
 
 const SCREENSHOT_PATH = 'artifacts/main-scene.png';
 const FLAP_SCREENSHOT_PATH = 'artifacts/mid-flap.png';
+const SCORE_SCREENSHOT_PATH = 'artifacts/score-one.png';
 
 test('bird falls under gravity in the Main scene', async ({ page }) => {
   await page.goto('/FlappyBird/');
@@ -59,4 +60,34 @@ test('clicking the canvas flaps the bird upward versus no input control', async 
 
   mkdirSync(dirname(FLAP_SCREENSHOT_PATH), { recursive: true });
   await page.screenshot({ path: FLAP_SCREENSHOT_PATH, fullPage: false });
+});
+
+test('reactive flaps can pass one pipe and show score 1', async ({ page }) => {
+  await page.goto('/FlappyBird/');
+  await page.waitForSelector('canvas[data-phaser-ready="true"]', { timeout: 10_000 });
+
+  const deadline = Date.now() + 6_000;
+  while (Date.now() < deadline) {
+    const state = await page.evaluate(() => {
+      const c = document.querySelector('canvas');
+      return {
+        y: Number(c?.getAttribute('data-bird-y') ?? '0'),
+        score: c?.getAttribute('data-score-text') ?? '',
+        gameOver: c?.getAttribute('data-game-over') === 'true',
+      };
+    });
+
+    if (state.score === '1') {
+      await expect(page.locator('canvas')).toHaveAttribute('data-score-text', '1');
+      mkdirSync(dirname(SCORE_SCREENSHOT_PATH), { recursive: true });
+      await page.screenshot({ path: SCORE_SCREENSHOT_PATH, fullPage: false });
+      return;
+    }
+
+    if (state.gameOver) break;
+    if (state.y > 260) await page.keyboard.press('Space');
+    await page.waitForTimeout(30);
+  }
+
+  await expect(page.locator('canvas')).toHaveAttribute('data-score-text', '1');
 });

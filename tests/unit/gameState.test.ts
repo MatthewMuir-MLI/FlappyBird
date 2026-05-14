@@ -29,6 +29,8 @@ describe('initialGameState', () => {
     expect(state.pipes).toEqual([]);
     expect(state.pipesSpawned).toBe(0);
     expect(state.pixelsUntilNextSpawn).toBe(0);
+    expect(state.score).toBe(0);
+    expect(state.scoredPipeIds).toEqual([]);
     expect(state.gameOver).toBe(false);
   });
 

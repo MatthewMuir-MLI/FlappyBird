@@ -1,0 +1,45 @@
+name: Slice
+description: A vertical slice of work that ships a thin end-to-end change
+title: "Slice N — <short name>"
+labels: ["slice"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A slice is the smallest end-to-end change that's still worth shipping. Read `AGENTS.md` and `CLAUDE.md` before working this issue.
+  - type: input
+    id: goal
+    attributes:
+      label: Goal (one sentence)
+      description: What is true when this slice ships?
+      placeholder: "Bird falls under gravity when the scene starts."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Checklist of verifiable conditions. Each item should be testable.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ] CI green
+        - [ ] Screenshot or GIF attached to the PR from the captured CI run
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Out of scope
+      description: Things the agent should NOT do as part of this slice, even if tempting.
+      placeholder: "- No sound effects yet (that's Slice 10)\n- No real art (that's Slice 9)"
+  - type: textarea
+    id: first-test
+    attributes:
+      label: Suggested first failing test (optional)
+      description: If you know what the TDD entry point looks like, sketch it here.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Context, links to related issues or prior slices, design considerations.

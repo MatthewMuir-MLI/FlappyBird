@@ -22,7 +22,7 @@ test('Main scene renders the FlappyBird title', async ({ page }) => {
 });
 
 test('clicking the canvas flaps the bird upward versus no input control', async ({ page }) => {
-  const measureAtFrame = async (frame: number): Promise<number> => {
+  const getBirdYAtFrame = async (frame: number): Promise<number> => {
     await page.waitForFunction(
       (targetFrame) => {
         const current = document.querySelector('canvas')?.getAttribute('data-bird-frame');
@@ -40,15 +40,15 @@ test('clicking the canvas flaps the bird upward versus no input control', async 
   await page.goto('/FlappyBird/');
   await page.waitForSelector('canvas[data-phaser-ready="true"]', { timeout: 10_000 });
 
-  const controlY = await measureAtFrame(20);
+  const noInputY = await getBirdYAtFrame(20);
 
   await page.goto('/FlappyBird/');
   await page.waitForSelector('canvas[data-phaser-ready="true"]', { timeout: 10_000 });
   await page.click('canvas');
 
-  const flapY = await measureAtFrame(20);
+  const flapY = await getBirdYAtFrame(20);
 
-  expect(flapY).toBeLessThan(controlY);
+  expect(flapY).toBeLessThan(noInputY);
 
   mkdirSync(dirname(FLAP_SCREENSHOT_PATH), { recursive: true });
   await page.screenshot({ path: FLAP_SCREENSHOT_PATH, fullPage: false });

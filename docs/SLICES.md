@@ -70,6 +70,37 @@ Slice format:
 
 ## Shipped
 
+### Slice 2 — Local CI
+**Goal:** GitHub Actions workflow that, on every push, runs the unit tests and a headless gameplay test that opens Slice 1's scene and screenshots it.
+**Done when:** A PR shows a green check and the screenshot is attached as an artifact (or posted to the PR).
+**Shipped:** 2026-05-13, branch `feat/slice-2-local-ci`, PR #2 (stacked on PR #1)
+**What's in it:**
+- `.github/workflows/ci.yml` with two jobs:
+  - `test`: `dotnet test` on ubuntu-latest, 7/7 passing.
+  - `screenshot`: installs Godot 4.6.2 mono on ubuntu-latest, imports the project, builds C#, runs `Main.tscn` under `xvfb` with `--rendering-driver vulkan`, captures the viewport, uploads PNG as `gameplay-screenshot` artifact.
+- `src/FlappyBird.Core/CliArgs.cs` — pure C# parser for `--capture-screenshot <path>`. 5 unit tests.
+- `scripts/Main.cs` — attached to `Main.tscn`. On `_ready`, checks `OS.GetCmdlineUserArgs()` via `CliArgs.GetScreenshotPath`; if present, waits two frames, calls `GetViewport().GetTexture().GetImage().SavePng(path)`, quits. Dev runs without the flag are unaffected.
+- `docs/screenshots/slice-1-main-scene.png` — Windows local verification capture.
+- `docs/screenshots/ci-slice-2-main-scene.png` — captured by ubuntu CI for visual comparison.
+
+**Verified:**
+- CI: both jobs green on first run (`gh run watch 25843465994`). Unit tests 25s, screenshot 54s.
+- Artifact downloads and renders correctly — visually identical to the Windows local capture.
+
+**Learned:**
+- `--headless` skips rendering entirely. CI needs a real display: `xvfb-run -a -s "-screen 0 1080x1920x24"` plus `mesa-vulkan-drivers` + `libvulkan1` plus `--rendering-driver vulkan`. Software Vulkan works fine on the GitHub-hosted runner.
+- User-args after `--` reach the running scene via `OS.GetCmdlineUserArgs()` in C#. Two `ProcessFrame` waits is enough for the scene to fully draw before capture; no need for `RenderingServer.FramePostDraw`.
+- GitHub deprecation warnings on `actions/checkout@v4`, `actions/setup-dotnet@v4`, `actions/upload-artifact@v4` (Node.js 20 -> 24 forced June 2026). Not blocking now. Will revisit when updated major versions ship.
+- Stacked PRs work: this PR targets `feat/slice-1-hello-godot`. When PR #1 merges to `main`, GitHub auto-retargets PR #2 to `main` and the diff stays clean.
+
+**Deferred:**
+- Inline screenshot embedding in PR comments. Artifact URLs require auth, so we can't `![](url)` directly. Options for later: commit to an orphan `screenshots` branch, upload to a gist, or push to ntfy.sh as part of Slice 12 (phone notifications).
+- Sticky PR comment posting (e.g. `marocchino/sticky-pull-request-comment`). Deferred until inline embedding is solved.
+- Branch protection rules requiring the `test` and `screenshot` checks before merge. Will enable after we confirm CI stays reliable across the next slice or two.
+- Solution-wide `dotnet test` invocation. Currently scoped to the test project. Fine for now.
+
+---
+
 ### Slice 1 — Hello Godot
 **Goal:** Empty Godot 4 C# project that opens to a scene showing the text "FlappyBird" on a colored background.
 **Done when:** `project.godot` opens cleanly in Godot 4, the scene runs locally on Windows, one trivial unit test passes.

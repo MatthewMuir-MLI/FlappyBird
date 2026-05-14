@@ -1,7 +1,11 @@
 import Phaser from 'phaser';
 import { flap } from '../core/flight';
-import { type GameConstants, type GameState, step as stepGame } from '../core/gameState';
-import { spawnPipe } from '../core/pipe';
+import {
+  type GameConstants,
+  type GameState,
+  initialGameState,
+  step as stepGame,
+} from '../core/gameState';
 
 const CANVAS_WIDTH = 540;
 const CANVAS_HEIGHT = 960;
@@ -12,33 +16,29 @@ const BIRD_COLOR = 0xffffff;
 
 const PIPE_WIDTH = 80;
 const PIPE_GAP_HEIGHT = 270;
-const PIPE_GAP_CENTER_Y = 240;
 const PIPE_COLOR = 0x2e8b57;
 
 const CONSTANTS: GameConstants = {
   gravity: 1500,
   pipeSpeed: 400,
+  pipeSpawnDistance: 280,
+  canvasWidth: CANVAS_WIDTH,
+  canvasHeight: CANVAS_HEIGHT,
+  pipeWidth: PIPE_WIDTH,
+  pipeGapHeight: PIPE_GAP_HEIGHT,
+  pipeGapYMin: 200,
+  pipeGapYMax: 760,
 };
 
-function makeStartingState(): GameState {
-  return {
-    bird: { position: { ...BIRD_START }, velocity: { x: 0, y: 0 } },
-    pipe: spawnPipe({
-      x: CANVAS_WIDTH,
-      canvasHeight: CANVAS_HEIGHT,
-      gapCenterY: PIPE_GAP_CENTER_Y,
-      gapHeight: PIPE_GAP_HEIGHT,
-      pipeWidth: PIPE_WIDTH,
-    }),
-    gameOver: false,
-  };
+interface PipeSpritePair {
+  top: Phaser.GameObjects.Rectangle;
+  bottom: Phaser.GameObjects.Rectangle;
 }
 
 export class MainScene extends Phaser.Scene {
-  private gameState: GameState = makeStartingState();
+  private gameState!: GameState;
   private birdSprite!: Phaser.GameObjects.Rectangle;
-  private topPipeSprite!: Phaser.GameObjects.Rectangle;
-  private bottomPipeSprite!: Phaser.GameObjects.Rectangle;
+  private pipeSprites = new Map<number, PipeSpritePair>();
   private birdFrame = 0;
 
   constructor() {
@@ -46,8 +46,12 @@ export class MainScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.gameState = makeStartingState();
+    this.gameState = initialGameState({
+      position: { ...BIRD_START },
+      velocity: { x: 0, y: 0 },
+    });
     this.birdFrame = 0;
+    this.pipeSprites.clear();
 
     this.birdSprite = this.add
       .rectangle(
@@ -58,26 +62,6 @@ export class MainScene extends Phaser.Scene {
         BIRD_COLOR
       )
       .setOrigin(0.5);
-
-    this.topPipeSprite = this.add
-      .rectangle(
-        this.gameState.pipe.top.x,
-        this.gameState.pipe.top.y,
-        this.gameState.pipe.top.width,
-        this.gameState.pipe.top.height,
-        PIPE_COLOR
-      )
-      .setOrigin(0, 0);
-
-    this.bottomPipeSprite = this.add
-      .rectangle(
-        this.gameState.pipe.bottom.x,
-        this.gameState.pipe.bottom.y,
-        this.gameState.pipe.bottom.width,
-        this.gameState.pipe.bottom.height,
-        PIPE_COLOR
-      )
-      .setOrigin(0, 0);
 
     const flapAction = (): void => {
       if (this.gameState.gameOver) return;
@@ -97,11 +81,45 @@ export class MainScene extends Phaser.Scene {
     this.gameState = stepGame(this.gameState, dt, CONSTANTS);
 
     this.birdSprite.setPosition(this.gameState.bird.position.x, this.gameState.bird.position.y);
-    this.topPipeSprite.setPosition(this.gameState.pipe.top.x, this.gameState.pipe.top.y);
-    this.bottomPipeSprite.setPosition(this.gameState.pipe.bottom.x, this.gameState.pipe.bottom.y);
+    this.syncPipeSprites();
 
     this.birdFrame += 1;
     this.syncCanvasState();
+  }
+
+  private syncPipeSprites(): void {
+    const activeIds = new Set<number>();
+    for (const pipe of this.gameState.pipes) {
+      activeIds.add(pipe.id);
+      let pair = this.pipeSprites.get(pipe.id);
+      if (!pair) {
+        pair = {
+          top: this.add
+            .rectangle(pipe.top.x, pipe.top.y, pipe.top.width, pipe.top.height, PIPE_COLOR)
+            .setOrigin(0, 0),
+          bottom: this.add
+            .rectangle(
+              pipe.bottom.x,
+              pipe.bottom.y,
+              pipe.bottom.width,
+              pipe.bottom.height,
+              PIPE_COLOR
+            )
+            .setOrigin(0, 0),
+        };
+        this.pipeSprites.set(pipe.id, pair);
+      }
+      pair.top.setPosition(pipe.top.x, pipe.top.y);
+      pair.bottom.setPosition(pipe.bottom.x, pipe.bottom.y);
+    }
+
+    for (const [id, pair] of this.pipeSprites) {
+      if (!activeIds.has(id)) {
+        pair.top.destroy();
+        pair.bottom.destroy();
+        this.pipeSprites.delete(id);
+      }
+    }
   }
 
   private syncCanvasState(): void {
@@ -111,5 +129,6 @@ export class MainScene extends Phaser.Scene {
     );
     this.game.canvas.setAttribute('data-bird-frame', String(this.birdFrame));
     this.game.canvas.setAttribute('data-game-over', this.gameState.gameOver ? 'true' : 'false');
+    this.game.canvas.setAttribute('data-pipe-count', String(this.gameState.pipes.length));
   }
 }

@@ -17,3 +17,12 @@ const config: Phaser.Types.Core.GameConfig = {
 
 console.info(`${GameInfo.Title} v${GameInfo.Version}`);
 new Phaser.Game(config);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const base = import.meta.env.BASE_URL;
+    void navigator.serviceWorker
+      .register(`${base}sw.js`, { scope: base })
+      .catch((error) => console.error('service-worker-registration-failed', error));
+  });
+}

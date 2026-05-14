@@ -138,6 +138,8 @@ test('reactive flaps can pass one pipe and show score 1', async ({ page }) => {
 test('collision triggers hit audio once', async ({ page }) => {
   await page.goto('/FlappyBird/');
   await page.waitForSelector('canvas[data-phaser-ready="true"]', { timeout: 10_000 });
+  await page.click('canvas');
+  await expect(page.locator('canvas')).toHaveAttribute('data-audio-ready', 'true');
 
   const deadline = Date.now() + 6_000;
   while (Date.now() < deadline) {

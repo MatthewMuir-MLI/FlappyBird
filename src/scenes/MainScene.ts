@@ -72,7 +72,7 @@ export class MainScene extends Phaser.Scene {
   private birdFrame = 0;
   private clouds: Cloud[] = [];
   private cloudSprites: Phaser.GameObjects.Image[] = [];
-  private audioPlayer!: AudioPlayer;
+  private audioPlayer: AudioPlayer = { flap: () => {}, score: () => {}, hit: () => {} };
   private audioReady = false;
   private audioGestureSeen = false;
   private audioCallCounts = { flap: 0, score: 0, hit: 0 };

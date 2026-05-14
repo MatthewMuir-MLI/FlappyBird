@@ -1,34 +1,33 @@
-# Godot 4 + .NET
+# Node / Vite / TypeScript
+node_modules/
+dist/
+dist-ssr/
+*.local
 
-# Godot generated cache
-.godot/
-.import/
-.mono/
+# Vite cache
+.vite/
 
-# .NET build artifacts
-bin/
-obj/
-*.user
-*.suo
-*.userprefs
+# TypeScript build info
+*.tsbuildinfo
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Generated screenshots from local Playwright runs
+artifacts/
 
 # IDE
 .vs/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 .idea/
 
-# Local export credentials (NEVER commit signing keys)
-export_credentials.cfg
-*.keystore
-*.jks
-
-# Build outputs
-*.apk
-*.aab
-builds/
-
-# Godot-generated csproj backups when SDK version is auto-bumped
-*.csproj.old
+# Env
+.env
+.env.local
+.env.*.local
 
 # OS
 Thumbs.db

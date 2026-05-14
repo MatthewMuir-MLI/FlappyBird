@@ -73,8 +73,6 @@ within ~30 seconds.
 Matthew opens the URL on his phone to play. No sideload, no install, no Play Store.
 ```
 
-Picking up a new session? Paste [docs/NEW_SESSION_PROMPT.md](docs/NEW_SESSION_PROMPT.md) into the new session as the first message.
-
 ---
 
 ## Project structure
@@ -105,8 +103,7 @@ FlappyBird/
 ├── public/                       # Static assets served as-is (sprites, audio in later slices).
 │
 ├── docs/
-│   ├── AESTHETIC.md              # Matthew's art direction (fill in before Slice 7).
-│   └── NEW_SESSION_PROMPT.md     # Paste into a new Claude Code session to bootstrap it.
+│   └── AESTHETIC.md              # Matthew's art direction (fill in before Slice 7).
 │
 ├── .github/
 │   ├── workflows/ci.yml          # 3 jobs: test, build-pages, deploy-pages.
@@ -202,38 +199,6 @@ All CI actions are pinned to majors that ship with Node.js 24 (`checkout@v6`, `s
 
 ---
 
-## Hard-won lessons (don't repeat these mistakes)
-
-### Platform / engine
-- **Godot 4 .NET does NOT export to web.** Only GDScript and GDExtension do. If you ever consider Godot + C# for a project that might ever go to web, decide now or you'll throw away all the C# code later. We did. See [ADR-001](https://github.com/MatthewMuir-MLI/FlappyBird/issues/21).
-- **App stores create infrastructure tax** disproportionate to a solo project's value. Web ships faster, costs nothing, and the same phone reviews PRs and plays the game.
-- **3D AI art is much less reliable than 2D AI art in 2026.** If you don't strictly need 3D, 2D is the agentic-friendly choice.
-
-### Workflow
-- **Stacked PRs are a trap on GitHub.** When PR A merges, PR B (which targeted A's branch) does NOT auto-retarget to `main`. Tapping "Merge" on PR B will merge into A's branch (a feature branch), not into `main`, and your work goes nowhere visible. Either rebase manually after each merge, or just target `main` from the start and accept the messy intermediate diffs.
-- **Agents hallucinate PR numbers and premature "Shipped" entries.** Copilot in particular will sometimes write `Shipped: PR #8` when the actual PR is #17 and CI is red. Always verify before merging.
-- **AGENTS.md beats CLAUDE.md for cross-tool agent guidance** because more agents look for it. Keep them consistent.
-
-### Physics
-- **Semi-implicit Euler** (`v += a*dt; x += v*dt`) beats explicit Euler (`x += v*dt; v += a*dt`) for game physics. Explicit doesn't move position on the first frame from rest, which fails human intuition and breaks any "object starts falling immediately" test.
-
-### Tooling
-- **Biome 2.x defaults to LF.** Windows defaults to CRLF. Solve permanently with `.gitattributes`: `* text=auto eol=lf`. Don't fight it per-commit.
-- **Vite's `base` config** must match the Pages subpath in production. Use the `({ mode })` callback form: `base: mode === 'production' ? '/FlappyBird/' : '/'`.
-- **Playwright's `webServer` ≠ `use.baseURL`.** Set both. The webServer entry tells Playwright how to start the server; `use.baseURL` is what relative `page.goto('/path')` resolves against.
-
-### Godot-specific (only relevant if you go back, but useful to log)
-- **`--headless` skips rendering entirely.** Screenshots and any visual validation need `xvfb` + Vulkan software renderer on Linux CI.
-- **Godot 4.6 expects `editor_settings-4.6.tres`**, not `-4.tres`. The filename includes the engine major.minor.
-- **The "C#/.NET is experimental" warning on Android export is a red herring.** It's always appended to the error string for MODULE_MONO_ENABLED builds, regardless of whether anything's actually wrong. The real blocker is usually `ResourceImporterTextureSettings::should_import_etc2_astc()` returning false, which sets `valid = false` silently. Fix: `rendering/textures/vram_compression/import_etc2_astc=true` in `project.godot`.
-- **winget portable installs of Godot 4.6.2 Mono fail** with `copy_file: Access is denied` on the directory-shaped zip (winget v1.28.240 bug). Workaround: copy from `%LOCALAPPDATA%\Temp\WinGet\...\extracted\` to a stable location yourself.
-
-### Agents
-- **Claude Code (Opus 4.7) produces noticeably better code than Copilot Coding Agent** for this kind of project. Sonnet-class is fine for routine; Opus-class is the right pick for design decisions.
-- **Use the Claude Code mobile app to drive a desktop session** for the truly hands-off experience. Copilot Coding Agent runs in GitHub's cloud and is great for fully async work but harder to redirect mid-stream.
-
----
-
 ## Where to look for…
 
 | Question | File |
@@ -243,4 +208,3 @@ All CI actions are pinned to majors that ship with Node.js 24 (`checkout@v6`, `s
 | "What art are we going for?" | [docs/AESTHETIC.md](docs/AESTHETIC.md) |
 | "What should I work on next?" | [Open issues labeled `slice`](https://github.com/MatthewMuir-MLI/FlappyBird/issues?q=is%3Aissue+is%3Aopen+label%3Aslice) |
 | "Why is this Phaser+web and not Godot+Android?" | [ADR-001 issue #21](https://github.com/MatthewMuir-MLI/FlappyBird/issues/21) |
-| "I'm starting a new Claude Code session, what's the bootstrap?" | [docs/NEW_SESSION_PROMPT.md](docs/NEW_SESSION_PROMPT.md) |

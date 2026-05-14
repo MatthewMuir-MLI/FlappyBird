@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { BirdState } from '../../src/core/birdPhysics';
 import { type AudioPlayer, flapWithAudio, playTransitionAudio } from '../../src/core/audioEvents';
-import type { GameState } from '../../src/core/gameState';
+import type { BirdState } from '../../src/core/birdPhysics';
 import { FLAP_VELOCITY } from '../../src/core/flight';
+import type { GameState } from '../../src/core/gameState';
 
 function makeBird(y: number): BirdState {
   return { position: { x: 270, y }, velocity: { x: 0, y: 0 } };

@@ -147,7 +147,10 @@ export class MainScene extends Phaser.Scene {
       if (this.gameState.gameOver) return;
       this.audioGestureSeen = true;
       this.sound.unlock();
-      this.gameState = { ...this.gameState, bird: flapWithAudio(this.gameState.bird, this.audioPlayer) };
+      this.gameState = {
+        ...this.gameState,
+        bird: flapWithAudio(this.gameState.bird, this.audioPlayer),
+      };
     };
 
     this.input.on('pointerdown', flapAction);

@@ -193,13 +193,13 @@ Workflow file: [.github/workflows/ci.yml](.github/workflows/ci.yml). Three jobs:
 |---|---|---|
 | `Unit tests` | every push + PR | Biome + Vitest |
 | `Build for GitHub Pages` | `main` only, after unit tests pass | `npm run build` into `dist/`, upload Pages artifact |
-| `Deploy to GitHub Pages` | `main` only, after build | `actions/deploy-pages@v4` |
+| `Deploy to GitHub Pages` | `main` only, after build | `actions/deploy-pages@v5` |
 
 Playwright e2e is intentionally not on CI — see Testing Strategy above.
 
 GitHub Pages is configured with `build_type=workflow` (deployed by Actions, not from a `gh-pages` branch). The live URL is https://matthewmuir-mli.github.io/FlappyBird/.
 
-Tech-debt issue [#4](https://github.com/MatthewMuir-MLI/FlappyBird/issues/4) tracks the Node.js 20 deprecation in the official `actions/*@v4`. Non-blocking until Sep 2026.
+All CI actions are pinned to majors that ship with Node.js 24 (`checkout@v6`, `setup-node@v6`, `upload-pages-artifact@v5`, `deploy-pages@v5`) so the workflow stays clean past the Sep 2026 Node 20 removal.
 
 ---
 
@@ -255,4 +255,4 @@ Shipped: pivot + Slice 1 (Hello Phaser) + Slice 2 (Bird falls) + Slice 3 (Tap to
 
 Backlog: Slices 4–10 are filed as open issues. Slice 4 (One pipe + collision) is next. Slice 7 (Real sprites) is blocked on [docs/AESTHETIC.md](docs/AESTHETIC.md) being filled in.
 
-Tech debt: [#4](https://github.com/MatthewMuir-MLI/FlappyBird/issues/4) Node.js 20 deprecation in CI actions. Not blocking; address before Sep 2026.
+Tech debt: none currently tracked.

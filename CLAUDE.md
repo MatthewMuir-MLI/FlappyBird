@@ -57,7 +57,6 @@ FlappyBird/
     e2e/               # Playwright *.spec.ts
   docs/
     AESTHETIC.md       # Matthew's art direction
-    SLICES.md          # log of completed vertical slices
   .github/
     workflows/         # CI: lint, unit tests, Pages deploy
 ```
@@ -86,7 +85,7 @@ If a future slice wants any of the above, it gets filed as a GitHub Issue — we
 3. GitHub Actions runs lint + unit tests. (Playwright is local-only; CI does not run it.)
 4. When CI is green, the agent marks the PR ready and requests review from Matthew.
 5. Matthew reviews on phone, comments, merges or sends feedback. Agents never self-merge.
-6. The merge auto-closes the issue (via `Closes #N`) and the agent appends a "Shipped" entry to `docs/SLICES.md` in its final commit.
+6. The merge auto-closes the issue (via `Closes #N`).
 7. The merge triggers the Pages deploy. The site at https://matthewmuir-mli.github.io/FlappyBird/ updates within ~30 seconds.
 
 See [AGENTS.md](AGENTS.md) for the full agent-facing playbook.
@@ -94,7 +93,6 @@ See [AGENTS.md](AGENTS.md) for the full agent-facing playbook.
 ## Where things live
 - This repo: `C:\Users\mmuir\Forever\GitHubF\FlappyBird`
 - **Backlog:** GitHub Issues, label `slice`. The next thing to work on is the oldest open `slice` issue.
-- **Shipped log:** `docs/SLICES.md`.
 - **Deferred items / tech debt:** GitHub Issues, label `tech-debt`.
 - **Decisions:** GitHub Issues, label `adr`. ADR-001 documents the Godot-to-Phaser pivot.
 - **Tool decisions:** `docs/TOOL_DECISIONS.md`. Check before reaching for any external API or service — captures what's picked, what's exception, what's still open.

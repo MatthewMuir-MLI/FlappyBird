@@ -105,7 +105,6 @@ FlappyBird/
 ├── public/                       # Static assets served as-is (sprites, audio in later slices).
 │
 ├── docs/
-│   ├── SLICES.md                 # Shipped log. Authoritative history.
 │   ├── AESTHETIC.md              # Matthew's art direction (fill in before Slice 7).
 │   └── NEW_SESSION_PROMPT.md     # Paste into a new Claude Code session to bootstrap it.
 │
@@ -241,18 +240,7 @@ All CI actions are pinned to majors that ship with Node.js 24 (`checkout@v6`, `s
 |---|---|
 | "What are the rules of this project?" | [CLAUDE.md](CLAUDE.md) |
 | "How do I work as an agent in this repo?" | [AGENTS.md](AGENTS.md) |
-| "What have we shipped?" | [docs/SLICES.md](docs/SLICES.md) |
 | "What art are we going for?" | [docs/AESTHETIC.md](docs/AESTHETIC.md) |
 | "What should I work on next?" | [Open issues labeled `slice`](https://github.com/MatthewMuir-MLI/FlappyBird/issues?q=is%3Aissue+is%3Aopen+label%3Aslice) |
 | "Why is this Phaser+web and not Godot+Android?" | [ADR-001 issue #21](https://github.com/MatthewMuir-MLI/FlappyBird/issues/21) |
 | "I'm starting a new Claude Code session, what's the bootstrap?" | [docs/NEW_SESSION_PROMPT.md](docs/NEW_SESSION_PROMPT.md) |
-
----
-
-## Project status (at the time of writing)
-
-Shipped: pivot + Slice 1 (Hello Phaser) + Slice 2 (Bird falls) + Slice 3 (Tap to flap) + Phaser 4 upgrade.
-
-Backlog: Slices 4–10 are filed as open issues. Slice 4 (One pipe + collision) is next. Slice 7 (Real sprites) is blocked on [docs/AESTHETIC.md](docs/AESTHETIC.md) being filled in.
-
-Tech debt: none currently tracked.

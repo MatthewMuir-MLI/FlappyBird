@@ -4,9 +4,8 @@ You are an AI coding agent (Claude Code, GitHub Copilot Coding Agent, or similar
 
 ## Read first
 1. [CLAUDE.md](CLAUDE.md) — project standards (vertical slices, TDD, branches, what "done" means). Authoritative.
-2. [docs/SLICES.md](docs/SLICES.md) — log of shipped slices, lessons learned, deferred items.
-3. The issue you've been assigned.
-4. [ADR-001](https://github.com/MatthewMuir-MLI/FlappyBird/issues/21) if you wonder why this is Phaser+web and not Godot+Android.
+2. The issue you've been assigned.
+3. [ADR-001](https://github.com/MatthewMuir-MLI/FlappyBird/issues/21) if you wonder why this is Phaser+web and not Godot+Android.
 
 ## Stack
 - Phaser 4 + TypeScript (strict). Vite. Vitest. Playwright. Biome. GitHub Pages.
@@ -16,7 +15,7 @@ You are an AI coding agent (Claude Code, GitHub Copilot Coding Agent, or similar
 - **CI runs unit tests only.** Playwright e2e runs locally (`npm run test:e2e`); agents must run it before pushing a slice PR.
 
 ## How tasks flow
-- **Backlog lives in GitHub Issues**, not in `SLICES.md`. Issues labeled `slice` are the queue. Pick the oldest open issue assigned to you, or the one explicitly named in your prompt.
+- **Backlog lives in GitHub Issues.** Issues labeled `slice` are the queue. Pick the oldest open issue assigned to you, or the one explicitly named in your prompt.
 - **Slice issues** carry a goal and acceptance criteria. If they're unclear, comment on the issue asking for clarification *before* writing code. Playbook: § How to ship a slice.
 - **Bug issues** describe a reproduction. Write a failing test that captures the bug, then fix it.
 - **`regen-asset` issues** request fresh AI-generated art variants. They are NOT slices — slice rules (TDD, vertical slice, Phaser scene changes) do not apply. Playbook: § Asset regeneration.
@@ -33,8 +32,7 @@ You are an AI coding agent (Claude Code, GitHub Copilot Coding Agent, or similar
 6. Open a **draft PR** targeting `main`. Use the PR template. Link the issue with `Closes #N`.
 7. Wait for CI. If red, fix and push again — do not mark ready while red.
 8. When CI is green, mark the PR **Ready for review** and request review from `@MatthewMuir-MLI`.
-9. Update `docs/SLICES.md` in a final commit on the same PR, moving the slice into the "Shipped" section with what was learned and what was deferred.
-10. **Do not merge your own PR.** Matthew merges from his phone.
+9. **Do not merge your own PR.** Matthew merges from his phone.
 
 ## Asset regeneration
 
@@ -62,7 +60,7 @@ A regen IS NOT:
 - A TypeScript change.
 - A test change.
 - A Phaser scene change.
-- A docs change outside `docs/AESTHETIC.md` and `docs/SLICES.md`.
+- A docs change outside `docs/AESTHETIC.md`.
 - A dependency change.
 
 If you find yourself wanting to touch any "is not" file, stop and
@@ -75,7 +73,6 @@ needs a slice issue.
 - `public/assets/<asset>-<version>-{a,b,c}.png` (the generated variants)
 - `public/assets/<asset>.png` (only at the post-pick rename step)
 - `docs/AESTHETIC.md` (prompt-library iteration log)
-- `docs/SLICES.md` (one chore entry at the post-pick rename step)
 
 Any other file: out of scope.
 
@@ -141,9 +138,6 @@ Any other file: out of scope.
       set status to approved, add the version's iteration-log entry
       (chosen variant + brief reason + rejection reasons for the
       others, mirroring the existing entries for bird/pipe/cloud).
-    - Edit `docs/SLICES.md`: add a one-paragraph `chore — regen
-      <asset> <version>` entry under "Shipped" following the existing
-      `chore` entry format (Phaser-4 bump is the model).
     - Commit: `chore(regen): apply <asset> <version>-<letter> pick`.
 
 11. **Mark the PR ready for review.** Matthew merges from phone. The

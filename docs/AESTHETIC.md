@@ -321,8 +321,8 @@ A tall vertical stone obstacle pillar with a flared decorative cap at one end, i
 
 The v2 prompt was drafted by Copilot Coding Agent on PR #59 and used
 verbatim — it correctly carried forward the Slice 7 lesson about
-gameplay-driven tiling ("no pedestal or base") that was in
-`docs/SLICES.md`. Worth knowing the lesson-propagation worked: a
+gameplay-driven tiling ("no pedestal or base") from the Slice 7 PR
+description. Worth knowing the lesson-propagation worked: a
 downstream agent picked up an earlier round's deferred-list item
 without being told to.
 

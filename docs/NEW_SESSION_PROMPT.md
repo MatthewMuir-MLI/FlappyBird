@@ -11,9 +11,9 @@ You are the default coding agent for this project per AGENTS.md. I review and me
 
 Before doing anything else, please:
 
-1. Read these files in this order: README.md, CLAUDE.md, AGENTS.md, docs/SLICES.md. They are short and authoritative. They tell you how we work, what we've shipped, and the standards that are non-negotiable.
+1. Read these files in this order: README.md, CLAUDE.md, AGENTS.md. They are short and authoritative. They tell you how we work and the standards that are non-negotiable.
 
-2. Run `gh issue list --state open --label slice` and `gh pr list --state open` to see the live backlog and anything currently in flight.
+2. Run `gh issue list --state open --label slice`, `gh pr list --state open`, and `gh pr list --state merged --limit 20` to see the live backlog, anything in flight, and what's recently shipped.
 
 3. Then tell me in a few sentences:
    - The current state (what's shipped, what's open).
@@ -39,7 +39,7 @@ I drive you remotely from the Claude Code mobile app most of the time. Optimize 
 
 Long Claude Code sessions accumulate context that becomes expensive to carry forward. Anthropic's prompt cache TTL is 5 minutes; a session that's been idle longer pays a cache miss on every tool call. Starting fresh restores a tight, fast loop — at the cost of the new session not knowing the project's history.
 
-The fix is to make the repo itself carry the context (README.md, CLAUDE.md, AGENTS.md, docs/SLICES.md) and use this prompt to point a new session at them. The new session is productive within a minute.
+The fix is to make the repo itself carry the context (README.md, CLAUDE.md, AGENTS.md) and use this prompt to point a new session at them. The new session is productive within a minute.
 
 ## When to reset
 
@@ -52,5 +52,4 @@ Some signals that a session is overdue for a reset:
 ## What to do before resetting
 
 - Make sure any in-flight PR has its description updated with the current state.
-- Check that `docs/SLICES.md` "Shipped" section reflects everything that's actually shipped to `main`.
 - Note any conversational decisions that weren't captured in code or docs. If something is only "in the session", commit it to a markdown file before you reset.

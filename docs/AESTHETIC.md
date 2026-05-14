@@ -77,22 +77,41 @@ more than cost. Alternatives to weigh then:
 
 ## API key storage
 
-For now: the agent reads the key from `$env:GEMINI_API_KEY`. Matthew
-sets it once in his PowerShell profile:
+For local agent runs (Claude Code on Matthew's desktop): the agent
+reads the key from `$env:GEMINI_API_KEY`. Set it once as a User-scope
+environment variable so child processes — including Claude Code's
+tool shells — inherit it:
 
 ```powershell
-notepad $PROFILE
-# add this line, save, restart terminal:
-$env:GEMINI_API_KEY = "<key from aistudio.google.com/apikey>"
+[Environment]::SetEnvironmentVariable("GEMINI_API_KEY", "<key from aistudio.google.com/apikey>", "User")
 ```
 
-The key never gets committed. `.gitignore` already excludes `.env*`
-files; do not introduce one for this. PowerShell profile + agent's
-local shell access is the entire mechanism.
+Restart any running Claude Code session after setting it. Environment
+variables are inherited at process start, so existing sessions won't
+see the new value.
 
-When generation gets automated (likely Slice 8 or Rung 2), the key
-moves to repo Settings → Secrets and Variables → Actions, accessed
-as `${{ secrets.GEMINI_API_KEY }}`.
+Do NOT use the PowerShell profile (`$PROFILE`) for this. Profile
+scripts only run for interactive sessions, not for subprocess tool
+shells, so the agent wouldn't see the var.
+
+The key never gets committed. `.gitignore` already excludes `.env*`
+files; do not introduce one for this.
+
+For GitHub-side generation (Copilot cloud agents now, automated
+Actions workflows later), the key is also stored as repo secrets:
+
+- **Copilot Agents secret** — repo Settings → Secrets and variables
+  → **Agents** → New repository secret. Required for the Copilot
+  cloud agent to see it (the Agents bucket is separate from Actions
+  and was added in May 2026). As of that release `gh secret set`
+  does NOT support `--app agents`, so use the web UI.
+- **Actions secret** — `gh secret set GEMINI_API_KEY` from desktop,
+  or repo Settings → Secrets and variables → Actions. Accessed in
+  workflows as `${{ secrets.GEMINI_API_KEY }}`. Required for any
+  PR-comment-triggered regen workflow we add later.
+
+Both repo secrets and the local User env var hold the same value
+(the same key string from AI Studio). Rotate together if/when needed.
 
 ## Consistency engine
 

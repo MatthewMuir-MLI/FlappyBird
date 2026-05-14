@@ -27,6 +27,9 @@ export_credentials.cfg
 *.aab
 builds/
 
+# Godot Android Gradle build template — re-extracted in CI and on local exports
+android/
+
 # Godot-generated csproj backups when SDK version is auto-bumped
 *.csproj.old
 

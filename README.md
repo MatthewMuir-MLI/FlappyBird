@@ -102,7 +102,7 @@ FlappyBird/
 │   ├── unit/                     # Vitest. Tests for src/core/. Runs on CI.
 │   └── e2e/                      # Playwright. Drives the rendered game. Local-only.
 │
-├── public/                       # Static assets served as-is (sprites, audio in later slices).
+├── public/                       # Static assets served as-is (sprites + local synthesized audio SFX).
 │
 ├── docs/
 │   ├── SLICES.md                 # Shipped log. Authoritative history.

@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
+import { type AudioPlayer, flapWithAudio, playTransitionAudio } from '../core/audioEvents';
 import {
   type Cloud,
   type CloudParallaxConstants,
   initialClouds,
   stepClouds,
 } from '../core/cloudParallax';
-import { flap } from '../core/flight';
 import {
   type GameConstants,
   type GameState,
@@ -32,6 +32,16 @@ const CLOUD_PARALLAX: CloudParallaxConstants = {
 };
 
 const SPRITE_KEYS = ['bird', 'pipe', 'cloud'] as const;
+const AUDIO_KEYS = {
+  flap: 'audio-flap',
+  score: 'audio-score',
+  hit: 'audio-hit',
+} as const;
+const AUDIO_VOLUMES = {
+  flap: 0.3,
+  score: 0.35,
+  hit: 0.4,
+} as const;
 
 // World scrolls 1 second before the first pipe enters the canvas so the player
 // isn't forced to react immediately on start.
@@ -62,6 +72,10 @@ export class MainScene extends Phaser.Scene {
   private birdFrame = 0;
   private clouds: Cloud[] = [];
   private cloudSprites: Phaser.GameObjects.Image[] = [];
+  private audioPlayer!: AudioPlayer;
+  private audioReady = false;
+  private audioGestureSeen = false;
+  private audioCallCounts = { flap: 0, score: 0, hit: 0 };
 
   constructor() {
     super({ key: 'MainScene' });
@@ -75,6 +89,9 @@ export class MainScene extends Phaser.Scene {
     this.load.image('bird', `${base}assets/bird.png`);
     this.load.image('pipe', `${base}assets/pipe.png`);
     this.load.image('cloud', `${base}assets/cloud.png`);
+    this.load.audio(AUDIO_KEYS.flap, `${base}assets/audio/flap.wav`);
+    this.load.audio(AUDIO_KEYS.score, `${base}assets/audio/score.wav`);
+    this.load.audio(AUDIO_KEYS.hit, `${base}assets/audio/hit.wav`);
   }
 
   create(): void {
@@ -87,6 +104,23 @@ export class MainScene extends Phaser.Scene {
     );
     this.birdFrame = 0;
     this.pipeSprites.clear();
+    this.audioReady = false;
+    this.audioGestureSeen = false;
+    this.audioCallCounts = { flap: 0, score: 0, hit: 0 };
+    this.audioPlayer = {
+      flap: () => {
+        this.audioCallCounts.flap += 1;
+        this.sound.play(AUDIO_KEYS.flap, { volume: AUDIO_VOLUMES.flap });
+      },
+      score: () => {
+        this.audioCallCounts.score += 1;
+        this.sound.play(AUDIO_KEYS.score, { volume: AUDIO_VOLUMES.score });
+      },
+      hit: () => {
+        this.audioCallCounts.hit += 1;
+        this.sound.play(AUDIO_KEYS.hit, { volume: AUDIO_VOLUMES.hit });
+      },
+    };
 
     // Clouds first so they paint behind the bird, pipes, and score.
     this.clouds = initialClouds(CANVAS_WIDTH, CANVAS_HEIGHT, CLOUD_COUNT);
@@ -111,7 +145,9 @@ export class MainScene extends Phaser.Scene {
 
     const flapAction = (): void => {
       if (this.gameState.gameOver) return;
-      this.gameState = { ...this.gameState, bird: flap(this.gameState.bird) };
+      this.audioGestureSeen = true;
+      this.sound.unlock();
+      this.gameState = { ...this.gameState, bird: flapWithAudio(this.gameState.bird, this.audioPlayer) };
     };
 
     this.input.on('pointerdown', flapAction);
@@ -128,8 +164,15 @@ export class MainScene extends Phaser.Scene {
 
   override update(_time: number, deltaMs: number): void {
     const dt = deltaMs / 1000;
-    this.gameState = stepGame(this.gameState, dt, CONSTANTS);
+    const previousState = this.gameState;
+    const nextState = stepGame(previousState, dt, CONSTANTS);
+    playTransitionAudio(previousState, nextState, this.audioPlayer);
+    this.gameState = nextState;
     this.clouds = stepClouds(this.clouds, dt, CLOUD_PARALLAX);
+
+    if (this.audioGestureSeen && !this.audioReady && !this.sound.locked) {
+      this.audioReady = true;
+    }
 
     this.birdSprite.setPosition(this.gameState.bird.position.x, this.gameState.bird.position.y);
     this.syncPipeSprites();
@@ -198,5 +241,9 @@ export class MainScene extends Phaser.Scene {
     this.game.canvas.setAttribute('data-pipe-count', String(this.gameState.pipes.length));
     this.game.canvas.setAttribute('data-cloud-count', String(this.cloudSprites.length));
     this.game.canvas.setAttribute('data-score-text', this.scoreText.text);
+    this.game.canvas.setAttribute('data-audio-ready', this.audioReady ? 'true' : 'false');
+    this.game.canvas.setAttribute('data-audio-flap-count', String(this.audioCallCounts.flap));
+    this.game.canvas.setAttribute('data-audio-score-count', String(this.audioCallCounts.score));
+    this.game.canvas.setAttribute('data-audio-hit-count', String(this.audioCallCounts.hit));
   }
 }

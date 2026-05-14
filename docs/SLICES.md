@@ -18,6 +18,36 @@ Slice format:
 
 ## Shipped
 
+### Slice 7 — Three sprites, real art
+**Goal:** Replace placeholder rectangles with three AI-generated sprites (bird, pipe, background prop) matching the prompt library in `docs/AESTHETIC.md`.
+**Shipped:** 2026-05-14, PR #55
+**What's in it:**
+- `scripts/generate-sprite.mjs` + `scripts/prompts/{house-style,negatives,bird-v1,pipe-v1,cloud-v1}.txt` — small Node script wraps the OpenAI Images API. Plain `fetch`, no SDK, no `sharp`. Two modes: `/v1/images/generations` for the first asset (bird) and `/v1/images/edits` with `image[]=public/assets/bird.png` for cohesion-via-style-reference on the pipe and cloud.
+- `public/assets/{bird,pipe,cloud}.png` — three transparent PNGs, 1024×1024 source, native RGBA from `background: "transparent"` on the API. Bird v1-b, pipe v1-c, cloud v1-c selected from three variants each via in-PR preview commenting.
+- `src/core/cloudParallax.ts` — pure logic for cloud x/y drift + wrap. No Phaser imports per the `src/core/` rule.
+- `tests/unit/cloudParallax.test.ts` — 10 cases covering initial placement, drift, wrap-only-when-fully-off-screen, no-mutation purity.
+- `src/scenes/MainScene.ts` — adds `preload()` that loads the three textures via `import.meta.env.BASE_URL` (works in dev and at `/FlappyBird/`). Rectangle bird/pipe become `Phaser.GameObjects.Image` with `setDisplaySize` preserving the existing 48-px bird and pipe-AABB dimensions; top pipe uses `setFlipY(true)` so the cap faces the gap. Three cloud sprites painted before everything else, drifting left at 30 px/s.
+- `tests/e2e/main-scene.spec.ts` — new spec asserts `data-sprites-loaded="true"`, `data-cloud-count="3"`, and that the three asset URLs return 200 (catches 404s Phaser would otherwise mask with a fallback texture).
+- `docs/AESTHETIC.md` + `docs/TOOL_DECISIONS.md` — rewritten Tool / Request shape / API key storage sections for `gpt-image-1`; prompt-library entries logged with chosen variants and rejection reasons; image-gen pick moved to TOOL_DECISIONS Exceptions table with the 429 evidence on Google's "free" tier so we don't bet on it again.
+
+**Verified:**
+- Local: `npm run lint` clean, `npm run build` (tsc + vite) clean, `npm test` 43/43 green, `npm run test:e2e` 5/5 green including the new sprite-presence spec.
+
+**Learned:**
+- **The advertised free tier on Gemini 2.5 flash image 429'd on the first real call.** Don't plan around free-tier claims without one cheap live verification call first. `feedback_verify_setup_recipes.md` in memory just earned its keep — same lesson, second sighting.
+- **`/v1/images/edits` with `image[]` as a style reference (no mask) is the cohesion mechanism for assets 2+.** All three pipes shared the bird's palette, outline weight, and paper grain without per-asset palette restatement. Worth more than fiddly negative-prompt tuning.
+- **Gameplay-driven constraints belong in the subject prompt, not the doc prose around it.** Pipe v1-a and v1-b had decorative pedestals that broke the off-screen-bottom illusion; cloud v1-a had a hollow ivory center that would have shown sky through during parallax. Both would have been one-shotted if "tile cleanly when stacked vertically" and "solid body, opaque fill" had been in the v1 prompt text.
+- **`gpt-image-1` with `background: "transparent"` returns real RGBA.** No chroma-key step, no `sharp`, no ImageMagick. Saved a whole class of failure modes the Gemini plan would have eaten.
+- **Cost was ~$0.40 for nine medium-quality variants + one low-quality probe.** Well inside the ~$0.75 budget anticipated in issue #28.
+
+**Deferred:**
+- Cap-and-stem tile mechanic for the pipe (single texture stretched, so the cap scales with the body; fine at current sizes, regenerate as `pipe-cap.png` + `pipe-body.png` if it starts to read wrong at extreme heights).
+- Wing-flap animation — the bird PNG is static; Slice 8 / audio + feel may revisit.
+- Sticker-edge artifact suppression in the negatives block — present on the bird, much weaker on pipe/cloud, not pursued.
+- Multi-cloud-size variety / sky gradient — current parallax is three identical clouds, intentionally minimal.
+
+---
+
 ### Slice 6 — Endless pipes
 **Goal:** Pipes spawn continuously with varied gap heights; off-screen pipes are despawned; active pipe count stays bounded.
 **Shipped:** 2026-05-14, PR #40

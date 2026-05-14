@@ -37,53 +37,60 @@ stage is "recognizably consistent," not "beautiful."
 
 ## Tool
 
-**Google `gemini-2.5-flash-image`** (informally "Nano Banana") via the
-Gemini API.
+**OpenAI `gpt-image-1`** via the OpenAI Images API.
 
-Why this choice:
-- Free tier covers our usage at this scale (~500 images/day on the
-  Google AI Studio free tier, no credit card). Three sprites × three
-  variants × maybe two iteration rounds ≈ 18 images per slice. We're
-  effectively unlimited.
-- **Image-reference inputs are first-class.** After the bird is
-  approved, every later asset request includes the bird PNG as a
-  reference image. This is the closest analog to Midjourney's `--sref`
-  we can get on a free API, and it is the load-bearing primitive for
+Why this choice (and why not the previously-named Google
+`gemini-2.5-flash-image`):
+- **First-class transparent backgrounds.** `gpt-image-1` accepts
+  `background: "transparent"` and returns a real alpha channel. Gemini
+  treats transparency as prompt-driven, which means an unreliable
+  alpha-cut post-processing step on every asset. The OpenAI native
+  alpha removes a whole class of failure modes for sprite work.
+- **Image-reference inputs are first-class** via the `/v1/images/edits`
+  endpoint. After the bird is approved, every later asset request
+  passes the bird PNG as a reference image. This is the closest analog
+  to Midjourney's `--sref` and is the load-bearing primitive for
   cohesion across our three sprites and beyond.
-- Same HTTP-call shape we'd use for any image API. No SDK required.
+- The Gemini free tier turned out unusable for us in practice — a real
+  429 from the live `gemini-2.5-flash-image` endpoint on a single
+  generation call, even though Google AI Studio's docs advertise a
+  generous free tier. We're done planning around a free tier we can't
+  actually use.
+- No SDK — plain `fetch` against the documented HTTP API.
 
 Tradeoffs accepted:
-- Transparent backgrounds are prompt-based, not a first-class request
-  parameter. Usually works; may occasionally need an alpha-cut
-  post-processing step (one ImageMagick call or a `sharp` invocation).
-- Output is 1024×1024 (model default). Phaser scales down to display
-  size. We trust the bilinear filter at this scale.
-- The Gemini image API schema (exact endpoint, field names, response
-  shape) evolves. The agent should verify against
-  https://ai.google.dev/gemini-api/docs/image-generation before the
-  first generation call of any new slice.
+- Paid. Roughly **$0.011 / low**, **$0.042 / medium**, **$0.167 / high**
+  per 1024×1024 image (April 2026 pricing). A full slice with three
+  bird variants at medium plus one iteration round is on the order of
+  ~$0.75. Cheap enough that we stop optimizing and generate.
+- Output is 1024×1024 (model default for square). Phaser scales down to
+  display size. We trust the bilinear filter at this scale.
+- The OpenAI Images API schema (endpoint, field names, response shape)
+  evolves and `gpt-image-1` is currently marked deprecated in OpenAI's
+  own model catalog (still serving). The agent should verify against
+  https://developers.openai.com/api/docs/guides/image-generation
+  before the first generation call of any new slice.
 
-Get the API key (free): https://aistudio.google.com/apikey
+Get the API key: https://platform.openai.com/api-keys
 
-Reconsider this pick at Rung 4 (one scripted house, dozens of assets)
-when consistency-at-scale and per-character identity start mattering
-more than cost. Alternatives to weigh then:
-- Midjourney via Chrome MCP — best `--sref`, no public API, manual loop
+Recraft remains the named Rung-4 successor candidate (one scripted
+house, dozens of assets) when first-class style sets and
+consistency-at-scale start mattering more than per-image cost.
+Alternatives to weigh then:
 - Recraft — API plus first-class style sets
-- OpenAI gpt-image-1 — cleaner transparent backgrounds, paid (no
-  free tier, ~$0.17 per high-quality 1024×1024)
+- Midjourney via Chrome MCP — best `--sref`, no public API, manual loop
 - FLUX via Replicate — cheapest API option, supports LoRAs for
   per-character identity
 
 ## API key storage
 
 For local agent runs (Claude Code on Matthew's desktop): the agent
-reads the key from `$env:GEMINI_API_KEY`. Set it once as a User-scope
+reads the key from `$env:OPENAI_API_KEY`. Set it once as a User-scope
 environment variable so child processes — including Claude Code's
 tool shells — inherit it:
 
 ```powershell
-[Environment]::SetEnvironmentVariable("GEMINI_API_KEY", "<key from aistudio.google.com/apikey>", "User")
+[Environment]::SetEnvironmentVariable("OPENAI_API_KEY", "<key from platform.openai.com/api-keys>", "User")
 ```
 
 Restart any running Claude Code session after setting it. Environment
@@ -105,20 +112,21 @@ Actions workflows later), the key is also stored as repo secrets:
   cloud agent to see it (the Agents bucket is separate from Actions
   and was added in May 2026). As of that release `gh secret set`
   does NOT support `--app agents`, so use the web UI.
-- **Actions secret** — `gh secret set GEMINI_API_KEY` from desktop,
+- **Actions secret** — `gh secret set OPENAI_API_KEY` from desktop,
   or repo Settings → Secrets and variables → Actions. Accessed in
-  workflows as `${{ secrets.GEMINI_API_KEY }}`. Required for any
+  workflows as `${{ secrets.OPENAI_API_KEY }}`. Required for any
   PR-comment-triggered regen workflow we add later.
 
 Both repo secrets and the local User env var hold the same value
-(the same key string from AI Studio). Rotate together if/when needed.
+(the same key string from platform.openai.com). Rotate together if/when
+needed.
 
 ## Consistency engine
 
 We lock everything we can in the request itself:
 
-- **Model.** `gemini-2.5-flash-image`. Don't switch mid-slice. A new
-  model is a new prompt-library experiment.
+- **Model.** `gpt-image-1`. Don't switch mid-slice. A new model is a
+  new prompt-library experiment.
 - **House style block.** Prepended verbatim to every prompt. Always.
 - **Palette.** Hex codes repeated in every prompt.
 - **Negative phrases block.** Appended verbatim to every prompt.
@@ -146,71 +154,89 @@ silhouette reads clearly at small size on a phone screen.
 Append this clause verbatim at the end of every prompt:
 
 ```
-Single subject only, output as a PNG with a fully transparent
-background (no solid color behind the subject), no text, no
+Single subject only, isolated on a transparent background, no text, no
 watermark, no signature, no busy background, no photorealism, no 3D
 rendering, no modern visual style.
 ```
 
+(Transparency is enforced by the `background: "transparent"` request
+parameter; the negative clause is belt-and-braces.)
+
 ## Request shape
 
-The agent calls the Gemini image API directly. Schema below is current
-as of 2026-05; agent must verify against the live docs before each
-slice's first call.
+The agent calls the OpenAI Images API directly via `fetch`. Schema
+below is current as of 2026-05; agent must verify against the live
+docs at https://developers.openai.com/api/docs/guides/image-generation
+before each slice's first call.
 
 ### First asset (no reference yet — the bird)
 
 ```jsonc
-// POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent
-// Header: x-goog-api-key: $GEMINI_API_KEY
+// POST https://api.openai.com/v1/images/generations
+// Headers:
+//   Authorization: Bearer $OPENAI_API_KEY
+//   Content-Type:  application/json
 {
-  "contents": [
-    {
-      "parts": [
-        { "text": "<house style block> <subject prompt v1> <negative phrases block>" }
-      ]
-    }
-  ]
+  "model": "gpt-image-1",
+  "prompt": "<house style block> <subject prompt v1> <negative phrases block>",
+  "size": "1024x1024",
+  "quality": "medium",
+  "background": "transparent",
+  "output_format": "png",
+  "n": 1
 }
 ```
 
-The response contains a base64-encoded PNG inside
-`candidates[0].content.parts[*].inline_data.data`. Decode and save.
+The response contains a base64-encoded PNG inside `data[0].b64_json`.
+Decode and save. (`gpt-image-1` always returns base64 — there is no
+URL-mode for this model.)
 
 ### Subsequent assets (using the approved bird as a style reference)
 
-```jsonc
-{
-  "contents": [
-    {
-      "parts": [
-        { "inline_data": { "mime_type": "image/png", "data": "<base64 of public/assets/bird.png>" } },
-        { "text": "Match the visual style of the reference image exactly: same linework weight, same paper grain, same palette, same level of stylization. <house style block> <subject prompt> <negative phrases block>" }
-      ]
-    }
-  ]
-}
+Switch to the `/v1/images/edits` endpoint and pass the approved bird
+PNG as the `image[]` part. The request is `multipart/form-data`:
+
+```
+POST https://api.openai.com/v1/images/edits
+Headers:
+  Authorization: Bearer $OPENAI_API_KEY
+  Content-Type:  multipart/form-data; boundary=...
+
+Fields:
+  model           = gpt-image-1
+  image[]         = @public/assets/bird.png    (style/composition reference)
+  prompt          = Match the visual style of the reference image
+                    exactly: same linework weight, same paper grain,
+                    same palette, same level of stylization.
+                    <house style block> <subject prompt> <negative phrases block>
+  size            = 1024x1024
+  quality         = medium
+  background      = transparent
+  output_format   = png
+  n               = 1
 ```
 
 The reference image is the entire cohesion mechanism for assets 2+.
-Don't skip it.
+Don't skip it. (`/v1/images/edits` originally meant "inpaint with a
+mask," but with no `mask` field and `gpt-image-1`, the model treats
+`image[]` as a style/composition reference for a brand-new generation.)
 
 ### Generating variants
 
-To get three variants, call the same request three times. Save the
+To get three variants, call the same request three times (with the
+same prompt; the model samples differently each call). Save the
 results as `<asset>-v1-a.png`, `-b.png`, `-c.png` under
 `public/assets/`.
 
-### Transparent background fallback
+### Transparent background
 
-If a returned PNG has a near-cream-not-actually-transparent background,
-post-process with one of:
-- `magick convert in.png -fuzz 5% -transparent "#f1e7d0" out.png`
-- A `sharp` call that thresholds the alpha channel.
+`gpt-image-1` with `background: "transparent"` returns a real alpha
+channel. No chroma-key post-processing, no `sharp`, no ImageMagick.
 
-Don't ship an asset with a solid background. If post-processing keeps
-failing on a given prompt, adjust the negative phrases block in this
-doc (don't override per-prompt) so the change is durable.
+If a returned PNG still has a solid background, the most likely cause
+is the `model` field accidentally being something other than
+`gpt-image-1` (older models don't support `background: "transparent"`).
+Fix the request, not the image.
 
 ## Prompt library
 
@@ -218,12 +244,12 @@ Each entry follows the same shape so we can compare across runs.
 
 ### 1. Bird (Slice 7 — first asset)
 
-**Status:** prompt drafted, not yet generated.
+**Status:** approved (`v1-b`).
 
 **Target:** transparent PNG of the player bird, side profile, wings
 mid-flap. Source 1024×1024; Phaser scales to ~96 px display.
 
-**Subject prompt v1:**
+**Subject prompt v1 (the one that worked):**
 
 ```
 A small plump cartoon bird, shown in side profile, wings spread
@@ -233,44 +259,118 @@ wing-tips. Heavy black outline. Reads as a friendly, lively character.
 ```
 
 **Full prompt sent:** house style block + subject prompt v1 + negative
-phrases block.
+phrases block (840 chars total).
+
+**Params on the approved run:**
+- Endpoint: `POST /v1/images/generations`
+- Model: `gpt-image-1`
+- Size: 1024×1024
+- Quality: `medium`
+- Background: `transparent`
+- Output: `png`
+- n: 1 per call, called three times for variants
 
 **Iteration log:**
-- v1 — drafted, not yet run.
+- v1 — three medium-quality variants generated; `v1-b` chosen
+  (two-tone oxblood back + cream belly with olive-yellow accents
+  on wings and chest; reads most "period-illustrated" of the three,
+  uses three of the four house palette colors). `v1-a` and `v1-c`
+  rejected and removed in the rename commit.
 
-**Params recorded on first successful run:**
-- Output files: TBD (`bird-v1-a.png`, `-b`, `-c`)
-- Chosen variant: TBD
-- Final filename: `public/assets/bird.png`
-- Status: drafted / generated / approved / rejected
+**Output:** `public/assets/bird.png` (chosen). Reused as the style
+reference for every later asset in this slice via
+`/v1/images/edits`.
+
+**Known v1 quirk to consider for future assets:** the model rendered
+a faint secondary "sticker edge" around each bird outline, likely
+from the negatives block phrase "isolated on a transparent
+background." If it shows up on the pipe or prop and reads as
+noise at display size, suppress with an explicit "no sticker
+border, no die-cut edge, no double outline" addition to the
+negatives block.
 
 ### 2. Pipe (Slice 7)
 
-**Status:** awaits bird approval so it can be generated with the bird
-PNG as a reference image.
+**Status:** approved (`v1-c`).
 
 **Target:** tall vertical obstacle, transparent PNG. Generate at
-1024×1024 and either crop / tile to the in-game aspect, or generate
-two sprites (pipe-body + pipe-cap) and tile vertically in Phaser.
+1024×1024; Phaser scales / crops to the in-game aspect. We trust
+the bird's chosen variant as the style reference via
+`/v1/images/edits` instead of hand-tuning the prompt.
 
-**Subject prompt v0 (refine after bird ships):**
+**Subject prompt v1 (the one that worked):**
 
 ```
 A tall vertical green obstacle column with a flared decorative cap at
-one end, like the trunk of a stylized tree or a Belle-Époque pillar.
-Olive green body with ivory highlights. Heavy black outline.
+one end, like the trunk of a stylized tree or a Belle-Epoque pillar.
+Olive green body with ivory highlights and an oxblood-red detail band
+where the cap flares. Heavy black outline. The column should tile
+cleanly when stacked vertically.
 ```
 
-### 3. Background prop (Slice 7)
+**Full request:** `/v1/images/edits` with `public/assets/bird.png`
+passed as the `image[]` reference, plus the "match the visual style
+of the reference image exactly" preamble. Same model / size / quality
+/ background / output as the bird.
 
-**Status:** awaits bird approval.
+**Iteration log:**
+- v1 — three medium-quality variants generated; `v1-c` chosen (tall
+  flared cap with oxblood neck band, no pedestal base; the only one
+  of the three that's tile-friendly for off-screen-bottom extension).
+  `v1-a` and `v1-b` had decorative pedestals — read fine as ornaments
+  but break the "infinite stem" illusion the game needs.
 
-**Target:** repeating background element. Candidates: a stylized period
-building silhouette, a Belle-Époque-style cloud, a tree.
+**Output:** `public/assets/pipe.png` (chosen). Lesson for future
+asset prompts: when an asset has gameplay-driven tiling requirements,
+state them in the subject prompt explicitly, not just in the doc
+prose around it.
 
-**Subject prompt v0:**
+**Cohesion check:** the bird-as-reference mechanism held. All three
+pipe variants kept the bird's olive-yellow body, oxblood accent,
+ivory highlights, heavy black outline, and paper grain without
+explicit per-asset re-statement of the palette. The faint "sticker
+edge" artifact from the bird also did not propagate strongly to the
+pipe — encouraging signal that we don't need to suppress it in the
+negatives block yet.
 
-_TBD after bird ships and the world tone is clearer._
+### 3. Background prop — cloud (Slice 7)
+
+**Status:** approved (`v1-c`).
+
+**Target:** repeating background element. Picked cloud over building
+or tree because clouds are the classic Flappy parallax element, the
+shape reads instantly at small size, and a cloud locks the world tone
+less aggressively than a building or tree would — leaving room for
+ground props at later rungs.
+
+**Subject prompt v1 (the one that worked):**
+
+```
+A single decorative cloud rendered as a Belle-Epoque lithograph:
+rounded puffy silhouette with a flat ivory fill and a subtle
+olive-green shadow gradient on the underside. Heavy black outline
+curving in soft ornamental arcs. Reads instantly as a cloud at small
+size on a phone. Horizontally elongated so it tiles and parallax-
+scrolls cleanly across the sky.
+```
+
+**Full request:** `/v1/images/edits` with `public/assets/bird.png`
+passed as the `image[]` reference, same "match the visual style of
+the reference image exactly" preamble as the pipe.
+
+**Iteration log:**
+- v1 — three medium-quality variants generated; `v1-c` chosen
+  (wider/flatter silhouette with articulated bumps along the top and
+  the heaviest olive underside shadow of the three). `v1-a` rejected
+  for a hollow ivory center — sky would have shown through during
+  parallax scroll, which is a gameplay-incompatible rendering choice
+  even though the silhouette read fine in isolation. `v1-b` rejected
+  on aesthetics (too cartoony, less visual weight).
+
+**Output:** `public/assets/cloud.png` (chosen). Lesson logged: when
+an asset has a transparency-implication for gameplay (parallax over
+a colored sky), spell out "solid body, opaque fill" in the subject
+prompt — same lesson as the pipe's tile-friendliness clause.
 
 ## How to add a new asset (procedure)
 

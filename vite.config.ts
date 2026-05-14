@@ -1,4 +1,6 @@
 import { defineConfig } from 'vite';
+import { copyFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 export default defineConfig(({ mode }) => ({
   // GitHub Pages serves the repo at /FlappyBird/. Use the same base in production
@@ -14,4 +16,12 @@ export default defineConfig(({ mode }) => ({
   preview: {
     port: 4173,
   },
+  plugins: [
+    {
+      name: 'copy-root-manifest',
+      writeBundle: () => {
+        copyFileSync(resolve(__dirname, 'manifest.json'), resolve(__dirname, 'dist', 'manifest.json'));
+      },
+    },
+  ],
 }));

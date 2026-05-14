@@ -5,6 +5,7 @@ import { expect, test } from '@playwright/test';
 const SCREENSHOT_PATH = 'artifacts/main-scene.png';
 const FLAP_SCREENSHOT_PATH = 'artifacts/mid-flap.png';
 const SCORE_SCREENSHOT_PATH = 'artifacts/score-one.png';
+const AUDIO_UNLOCK_SCREENSHOT_PATH = 'artifacts/audio-unlocked.png';
 
 test('bird falls under gravity in the Main scene', async ({ page }) => {
   await page.goto('/FlappyBird/');
@@ -54,12 +55,27 @@ test('clicking the canvas flaps the bird upward versus no input control', async 
   await page.waitForSelector('canvas[data-phaser-ready="true"]', { timeout: 10_000 });
   await page.click('canvas');
 
+  await expect(page.locator('canvas')).toHaveAttribute('data-audio-ready', 'true');
+  await expect(page.locator('canvas')).toHaveAttribute('data-audio-flap-count', '1');
+
   const flapY = await getBirdYAtFrame(20);
 
   expect(flapY).toBeLessThan(noInputY);
 
   mkdirSync(dirname(FLAP_SCREENSHOT_PATH), { recursive: true });
   await page.screenshot({ path: FLAP_SCREENSHOT_PATH, fullPage: false });
+});
+
+test('audio unlocks after first user gesture', async ({ page }) => {
+  await page.goto('/FlappyBird/');
+  await page.waitForSelector('canvas[data-phaser-ready="true"]', { timeout: 10_000 });
+
+  await expect(page.locator('canvas')).toHaveAttribute('data-audio-ready', 'false');
+  await page.click('canvas');
+  await expect(page.locator('canvas')).toHaveAttribute('data-audio-ready', 'true');
+
+  mkdirSync(dirname(AUDIO_UNLOCK_SCREENSHOT_PATH), { recursive: true });
+  await page.screenshot({ path: AUDIO_UNLOCK_SCREENSHOT_PATH, fullPage: false });
 });
 
 test('sprites are loaded and clouds populate the sky', async ({ page }) => {
@@ -104,6 +120,7 @@ test('reactive flaps can pass one pipe and show score 1', async ({ page }) => {
 
     if (state.score === '1') {
       await expect(page.locator('canvas')).toHaveAttribute('data-score-text', '1');
+      await expect(page.locator('canvas')).toHaveAttribute('data-audio-score-count', '1');
       mkdirSync(dirname(SCORE_SCREENSHOT_PATH), { recursive: true });
       await page.screenshot({ path: SCORE_SCREENSHOT_PATH, fullPage: false });
       return;
@@ -115,4 +132,26 @@ test('reactive flaps can pass one pipe and show score 1', async ({ page }) => {
   }
 
   await expect(page.locator('canvas')).toHaveAttribute('data-score-text', '1');
+  await expect(page.locator('canvas')).toHaveAttribute('data-audio-score-count', '1');
+});
+
+test('collision triggers hit audio once', async ({ page }) => {
+  await page.goto('/FlappyBird/');
+  await page.waitForSelector('canvas[data-phaser-ready="true"]', { timeout: 10_000 });
+  await page.click('canvas');
+  await expect(page.locator('canvas')).toHaveAttribute('data-audio-ready', 'true');
+
+  const deadline = Date.now() + 6_000;
+  while (Date.now() < deadline) {
+    const isOver = await page.evaluate(
+      () => document.querySelector('canvas')?.getAttribute('data-game-over') === 'true'
+    );
+    if (isOver) break;
+
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(50);
+  }
+
+  await expect(page.locator('canvas')).toHaveAttribute('data-game-over', 'true');
+  await expect(page.locator('canvas')).toHaveAttribute('data-audio-hit-count', '1');
 });

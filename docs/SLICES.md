@@ -26,11 +26,6 @@ Slice format:
 **Done when:** A PR shows a green check and the screenshot is attached as an artifact (or posted to the PR).
 **Why second:** proves the agent loop's *feedback channel* before we add any gameplay.
 
-### Slice 3 — Android build artifact
-**Goal:** CI produces a downloadable `.aab` (unsigned debug) on every push to main.
-**Done when:** The artifact downloads, installs on a real Android device via ADB-over-WiFi or sideload, and launches to Slice 1's scene.
-**Why third:** proves the mobile path before any gameplay. We will *not* publish yet.
-
 ### Slice 4 — Bird falls
 **Goal:** A bird (placeholder cube model) falls under gravity. No input yet.
 **Done when:** Headless test confirms y-position decreases over time. Screenshot attached.
@@ -69,6 +64,22 @@ Slice format:
 ---
 
 ## Shipped
+
+### Slice 3 — Android build artifact
+**Goal:** CI produces a downloadable `.aab` (unsigned debug) on every push to `main`.
+**Done when:** The artifact downloads, installs on a real Android device, and launches to Slice 1's scene.
+**Shipped:** 2026-05-14, PR #8
+**Learned:**
+- Godot 4 Mono (C#) export to Android requires the Gradle build (`gradle_build/use_gradle_build=true`); only Gradle produces AAB — the non-Gradle path produces APK only.
+- The Android build template (`android_source.zip`) lives inside the export templates `.tpz` and must be extracted to `android/build/` in the project before export; Godot does not extract it automatically in headless mode.
+- Godot needs `export/android/android_sdk_path` in `editor_settings-4.tres` to locate the SDK; the CI runner's `$ANDROID_SDK_ROOT` env var is the right value to use.
+- The `GodotSharp/` directory must sit alongside the Godot binary (not just in PATH) for C# compilation to work during export.
+- `export_presets.cfg` must be committed (without any signing keys); `android/` (the generated Gradle project) goes in `.gitignore`.
+
+**Deferred:**
+- Signed release builds for the Play Store (Slice 13).
+- Custom app icons / branding (Slice 9).
+- Automatic install / ADB-over-WiFi from CI (out of scope for now).
 
 ### Slice 1 — Hello Godot
 **Goal:** Empty Godot 4 C# project that opens to a scene showing the text "FlappyBird" on a colored background.

@@ -67,16 +67,22 @@ FlappyBird/
 - No localization beyond English.
 - No iOS build. Android-only for v1.
 
-If a future slice wants any of the above, it goes in `docs/SLICES.md` as a "deferred" entry — we don't build it speculatively.
+If a future slice wants any of the above, it gets filed as a GitHub Issue — we don't build it speculatively.
 
 ## Build and review loop
-1. Agent picks the next slice from `docs/SLICES.md` (or Matthew names one).
-2. Branch, TDD-implement, push, open PR.
-3. GitHub Actions runs tests, builds the Android `.aab`, captures gameplay frames.
-4. On success, a push notification fires to Matthew's phone with the PR link and frames.
-5. Matthew reviews on phone, comments, merges or sends feedback.
-6. Merged PRs trigger upload to Google Play Internal Testing track (later slice).
+1. Matthew picks an open GitHub Issue labeled `slice` and assigns it to an agent (default: `@copilot`; or runs Claude Code locally for harder tasks).
+2. Agent branches from `main`, TDD-implements the slice, opens a draft PR linking the issue.
+3. GitHub Actions runs unit tests + a headless gameplay test that captures a Main-scene PNG as an artifact.
+4. When CI is green, the agent marks the PR ready and requests review from Matthew.
+5. Matthew reviews on phone, comments, merges or sends feedback. Agents never self-merge.
+6. The merging PR auto-closes the issue (via `Closes #N`) and the agent appends a "Shipped" entry to `docs/SLICES.md` in its final commit.
+7. Merged PRs to `main` will (in a later slice) trigger upload to Google Play Internal Testing.
+
+See [AGENTS.md](AGENTS.md) for the full agent-facing playbook.
 
 ## Where things live
 - This repo: `C:\Users\mmuir\Forever\GitHubF\FlappyBird`
-- Project management: NOT in Azure DevOps. Tracked in this repo via `docs/SLICES.md` and GitHub issues/PRs.
+- **Backlog:** GitHub Issues, label `slice`. The next thing to work on is the oldest open `slice` issue.
+- **Shipped log:** `docs/SLICES.md` — what we built, learned, deferred.
+- **Deferred items / tech debt:** GitHub Issues, label `tech-debt`.
+- Project management is NOT in Azure DevOps for this project.

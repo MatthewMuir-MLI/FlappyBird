@@ -1,0 +1,44 @@
+name: Bug
+description: Something is broken or behaving wrong
+title: "Bug: <short description>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        File bugs even if the fix is small. The fix should land as a PR with a failing test that captures the bug.
+  - type: input
+    id: where
+    attributes:
+      label: Where it shows up
+      description: Scene, screen, build target, or commit/PR where you noticed it.
+      placeholder: "Main scene on Android, after first pipe"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshot / video / log
+      description: Drag and drop an image or paste a CI run URL.

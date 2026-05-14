@@ -97,4 +97,5 @@ See [AGENTS.md](AGENTS.md) for the full agent-facing playbook.
 - **Shipped log:** `docs/SLICES.md`.
 - **Deferred items / tech debt:** GitHub Issues, label `tech-debt`.
 - **Decisions:** GitHub Issues, label `adr`. ADR-001 documents the Godot-to-Phaser pivot.
+- **Tool decisions:** `docs/TOOL_DECISIONS.md`. Check before reaching for any external API or service — captures what's picked, what's exception, what's still open.
 - Project management is NOT in Azure DevOps for this project.

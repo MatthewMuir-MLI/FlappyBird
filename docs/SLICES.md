@@ -70,4 +70,25 @@ Slice format:
 
 ## Shipped
 
-(nothing yet)
+### Slice 1 — Hello Godot
+**Goal:** Empty Godot 4 C# project that opens to a scene showing the text "FlappyBird" on a colored background.
+**Done when:** `project.godot` opens cleanly in Godot 4, the scene runs locally on Windows, one trivial unit test passes.
+**Shipped:** 2026-05-13, branch `feat/slice-1-hello-godot`
+**What's in it:**
+- Godot 4.6.2 (Mono) project at repo root: `project.godot`, `icon.svg`, `scenes/Main.tscn` (blue background + centered "FlappyBird" label).
+- Three-project .NET solution (`FlappyBird.slnx`):
+  - `FlappyBird.csproj` — Godot.NET.Sdk 4.6.2, net8.0. Glob-excludes `src/**` and `tests/**` so it doesn't try to compile sibling projects.
+  - `src/FlappyBird.Core/FlappyBird.Core.csproj` — pure C# library. `GameInfo` constants live here.
+  - `tests/FlappyBird.Tests/FlappyBird.Tests.csproj` — xUnit. Two passing tests against `GameInfo`.
+- Verified: `dotnet test` → 2/2 pass. `dotnet build FlappyBird.csproj` → green. Godot `--import` → DONE. Godot scene boots with Vulkan, exits clean.
+
+**Learned:**
+- Godot.NET.Sdk auto-globs `**/*.cs` under the project dir — must exclude sibling projects with `<Compile Remove>` + `<DefaultItemExcludes>`. Otherwise duplicate AssemblyInfo + missing-reference errors.
+- `--headless` mode skips rendering entirely, so `--screenshot` produces no file. Real screenshot capture needs a non-headless run plus a script that grabs the viewport. Deferred to Slice 2 (CI).
+- winget's GodotEngine.GodotEngine.Mono v4.6.2 portable install fails with `copy_file: Access is denied` on the directory-shaped zip (winget bug v1.28.240). Workaround: copy from winget's temp extract dir to `%USERPROFILE%\Godot` and add to PATH manually.
+- .NET 10 SDK creates `.slnx` (new XML solution format) by default instead of `.sln`. Modern tooling handles both.
+
+**Deferred:**
+- Screenshot capture in scene (moved to Slice 2 with CI).
+- Godot scripts attached to `Main` scene (no game logic yet — slice 1 is text only).
+- Solution-wide `dotnet test` (currently scoped to the test project; works fine for now).

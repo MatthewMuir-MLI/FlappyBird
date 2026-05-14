@@ -18,6 +18,35 @@ Slice format:
 
 ## Shipped
 
+### Slice 4 — One pipe and collision
+**Goal:** One pipe pair scrolls left, the bird collides with it via AABB overlap, and a `data-game-over` attribute on the canvas reflects the state. No visible game-over UI — Slice 9 owns that.
+**Shipped:** 2026-05-14, PR #37
+**What's in it:**
+- `src/core/aabb.ts` — `AABB` type, `aabbsOverlap(a, b)` (inclusive — touching counts), `birdAABB(bird)` helper using `BIRD_SIZE = 48` to match the scene sprite.
+- `src/core/pipe.ts` — `Pipe` type as `{ top, bottom }` AABBs framing a gap. `spawnPipe(opts)` constructs a pair from gap center/height and canvas height; `stepPipe(pipe, dt, speed)` translates both AABBs left.
+- `src/core/gameState.ts` — orchestrator. `GameState = { bird, pipe, gameOver }`. `step(state, dt, c)` advances bird via existing `birdPhysics.step` and pipe via `stepPipe`, then checks `aabbsOverlap(birdAABB, pipe.top || pipe.bottom)`. Sets `gameOver: true` and freezes on collision.
+- `src/scenes/MainScene.ts` — renders the pipe pair as two green rectangles, mirrors them to the AABBs each frame, and publishes `data-game-over` alongside `data-bird-y` / `data-bird-frame`. Flap input no-ops once `gameOver` is set.
+- `tests/unit/aabb.test.ts` (5 cases), `tests/unit/pipe.test.ts` (3 cases), `tests/unit/gameState.test.ts` (4 cases) — unit suite grows from 10 to 22 tests.
+- `tests/e2e/pipe-collision.spec.ts` — two specs: fall-into-pipe polls `data-game-over` → `"true"` within 3s (and captures `artifacts/pipe-approach.png` at 400ms for the PR); reactive-flap spec sends `Space` only when `y > 260` so timing jitter doesn't push the bird into the top pipe.
+
+**Verified:**
+- CI green on PR #37 (Unit tests 22/22 + Headless gameplay screenshot pass).
+- `npm run build` clean.
+
+**Learned:**
+- **Reactive Playwright control beats fixed-interval flap loops.** A first attempt with `keyboard.press('Space')` every 120ms drove the bird into the top pipe because Playwright's actual press cadence drifts. Reading `data-bird-y` and flapping only when the bird crosses a threshold self-corrects against that jitter.
+- **Pipe speed (400 px/s) had to outrun the bird's free-fall window.** With gravity 1500 the bird leaves the canvas in ~1s; pipe at the standard right-edge spawn (x=540) reaches the bird at t≈0.6s only if it moves at 400 px/s or faster. Slice 6 will retune speed + spawn cadence together.
+- **Keeping the orchestrator in `src/core/gameState.ts` rather than inlining it into `birdPhysics`** keeps slice 9's upcoming title/game-over state machine a natural extension instead of a refactor.
+
+**Deferred:**
+- Multiple pipes — Slice 6.
+- Score on pipe pass — Slice 5.
+- Restart mechanic + game-over screen + title — Slice 9.
+- Death animation / particles.
+- Tuning `PIPE_SPEED` for feel rather than testability — wait for Slice 6 so cadence and speed land together.
+
+---
+
 ### Slice 3 — Tap to flap
 **Goal:** Tapping the canvas (or clicking, or pressing SPACE/Z) applies an upward impulse to the bird on top of the slice-2 falling physics.
 **Shipped:** 2026-05-14, PR #32

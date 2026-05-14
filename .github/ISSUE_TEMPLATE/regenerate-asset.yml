@@ -1,0 +1,90 @@
+name: Regenerate art asset
+description: Trigger a fresh round of three variants for an existing art asset, or generate a brand-new one
+title: "Regen — <asset> <version>"
+labels: ["regen-asset"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template when you want fresh variants of an art asset (e.g. you don't love the current pipe).
+        After you submit, assign the issue to **@copilot** — it will pick it up, run the generation script,
+        and open a draft PR with three variants for you to pick on phone.
+
+        The agent reads `AGENTS.md` § **Asset regeneration** as its playbook. Slice rules (TDD, vertical slices)
+        do NOT apply to regen issues — this is a deterministic file swap.
+
+  - type: dropdown
+    id: asset
+    attributes:
+      label: Asset
+      description: Which asset to regenerate. Picking a new name will create a new asset entry in `docs/AESTHETIC.md`.
+      options:
+        - bird
+        - pipe
+        - cloud
+        - (new — specify in "What to change" below)
+      default: 1
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version label
+      description: Next free version label for this asset's prompt-library entry in `docs/AESTHETIC.md`. Increment from the last shipped version — e.g. if v1 shipped, use v2.
+      placeholder: "v2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: changes
+    attributes:
+      label: What to change about the prompt
+      description: Plain-English description of what you want different in this round. The agent will edit `scripts/prompts/<asset>-<version>.txt` to reflect this before generating. Leave blank to regenerate with the exact same prompt as the previous version (sampling alone can produce different variants).
+      placeholder: |
+        - thinner outline, less heavy
+        - drop the oxblood band on the neck — too busy at small size
+        - try a slimmer column profile
+    validations:
+      required: false
+
+  - type: dropdown
+    id: use_bird_reference
+    attributes:
+      label: Use bird.png as style reference?
+      description: When YES, the agent calls `/v1/images/edits` with `public/assets/bird.png` as the image reference — that's the cohesion mechanism (assets stay visually consistent with the bird). Default YES for pipe / cloud / new assets. Set NO only for bird itself or if you specifically want a stylistic reset.
+      options:
+        - "yes"
+        - "no"
+      default: 0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: quality
+    attributes:
+      label: Quality
+      description: gpt-image-1 pricing per 1024×1024 image is ~$0.011 low / ~$0.042 medium / ~$0.167 high. Three variants. Medium is the default — high is for the final approved render only, low is for cheap probe / sanity checks.
+      options:
+        - low
+        - medium
+        - high
+      default: 1
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else the agent should know
+      description: Optional. Specific guidance — "this is the third regen round, prior rounds tried X and Y; don't repeat those" or "we're nearing the slice budget, watch costs."
+      placeholder: ""
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        **After you submit:** tap **Assignees** in the issue header and pick **@copilot**. The agent picks
+        up from the queue, posts an acknowledgement comment, then opens a draft PR titled
+        `chore(regen): <asset> <version>` with the three variants inline for phone-side selection.

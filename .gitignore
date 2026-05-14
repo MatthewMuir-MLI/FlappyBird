@@ -1,0 +1,32 @@
+# Godot 4 + .NET
+
+# Godot generated cache
+.godot/
+.import/
+.mono/
+
+# .NET build artifacts
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# Local export credentials (NEVER commit signing keys)
+export_credentials.cfg
+*.keystore
+*.jks
+
+# Build outputs
+*.apk
+*.aab
+builds/
+
+# OS
+Thumbs.db
+.DS_Store

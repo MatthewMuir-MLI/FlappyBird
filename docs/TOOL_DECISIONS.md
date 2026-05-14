@@ -38,7 +38,7 @@ When picking a tool for new work:
 | Unit tests | Vitest | Same authoring story as Vite | `CLAUDE.md` |
 | E2E tests (local only) | Playwright | Real Chromium in headless mode | `CLAUDE.md` |
 | LLM agent (build / review) | Anthropic Claude (via Claude Code) | The project IS the agentic Claude demo | `AGENTS.md` |
-| Image generation | Google `gemini-2.5-flash-image` (Nano Banana) | Free tier covers our usage; first-class image-reference inputs (closest analog to Midjourney `--sref`) on a free API | `docs/AESTHETIC.md` |
+| Image generation | OpenAI `gpt-image-1` | First-class transparent backgrounds (no chroma-key step), first-class image-reference inputs via `/v1/images/edits`. Google's `gemini-2.5-flash-image` "free tier" actually 429'd on us — we're done planning around a free tier we can't use. | `docs/AESTHETIC.md` |
 | Image cohesion strategy (Rung 1) | Single-anchor reference chain (bird → pipe + prop with bird as ref) | Simple; works for three sprites | `docs/AESTHETIC.md` |
 | Payments | Stripe | No real Google alternative for our use case | Rung 6 issue |
 
@@ -50,6 +50,7 @@ the reason.
 | Need | Pick | Why not Google |
 |---|---|---|
 | LLM agent (build / review) | Anthropic Claude | The project itself is the agentic Claude demo. Swapping to Gemini would muddy that story. |
+| Image generation | OpenAI `gpt-image-1` | Native transparent alpha removes a whole class of failure modes for sprite work; image-reference via `/v1/images/edits`. Gemini's advertised free tier 429'd on a single live call — not a tier we can plan around. Recraft remains the named Rung-4 successor when style-set consistency-at-scale beats per-image cost. |
 | LLM proxy (planned, Rung 3) | Cloudflare Workers | Better edge latency for a global mobile audience; simpler dev loop than Cloud Run. |
 | Voice + SFX (planned, Slice 8) | 11 Labs | Quality gap vs. Google Chirp at the time of writing. |
 | Music (planned, Slice 8) | Suno (+ Stable Audio for loops) | Quality gap vs. Google Lyria 2. |
@@ -77,10 +78,12 @@ against current vendor docs as of 2026-05.
 | Subscription | Image gen API? | Text LLM API? | Notes |
 |---|---|---|---|
 | Claude Pro/Max | No (Anthropic doesn't generate images) | No (Claude Code uses its own Anthropic billing; sub doesn't unlock API credits) | The sub powers Claude Code's interactive use |
-| Google AI Pro | No (in-app only; API is separate) | No (in-app only; API is separate) | Google AI Studio API has a separate free tier (~500 images/day Nano Banana, ~RPD limits for Gemini text) that's what we actually use |
-| ChatGPT Plus | No (in-app only; OpenAI API is separately billed) | No (same) | Not used in this project |
+| Google AI Pro | No (in-app only; API is separate) | No (in-app only; API is separate) | The advertised AI Studio free tier (~500 images/day Nano Banana) **429'd on a single live call** when we tried to use it for Slice 7. Lesson: verify free-tier claims against the live API before planning around them — vendor docs are aspirational, error responses are real. |
+| ChatGPT Plus | No (Plus is in-app only; OpenAI API is separately billed) | No (same) | API is billed separately. Slice 7 uses `gpt-image-1` directly against the OpenAI API with `OPENAI_API_KEY`, paid per-image — the Plus sub doesn't reduce that cost or unlock API credits. |
 | OpenCode Go | No (coding-model relay only) | Yes for build agents (Chinese open-source models) | Not used in this project; coding agent is Claude Code |
 
-The pattern: **consumer subscriptions usually don't unlock API access.**
-Free API tiers exist separately and are often the better story for an
-agent workflow. Check before recommending paid services.
+The pattern: **consumer subscriptions usually don't unlock API access,
+and free tiers can be aspirational.** Free API tiers exist separately,
+and where they exist their real-world reliability is often worse than
+the docs imply. Verify before recommending paid services and before
+betting a slice on a "free" tier.

@@ -37,53 +37,60 @@ stage is "recognizably consistent," not "beautiful."
 
 ## Tool
 
-**Google `gemini-2.5-flash-image`** (informally "Nano Banana") via the
-Gemini API.
+**OpenAI `gpt-image-1`** via the OpenAI Images API.
 
-Why this choice:
-- Free tier covers our usage at this scale (~500 images/day on the
-  Google AI Studio free tier, no credit card). Three sprites × three
-  variants × maybe two iteration rounds ≈ 18 images per slice. We're
-  effectively unlimited.
-- **Image-reference inputs are first-class.** After the bird is
-  approved, every later asset request includes the bird PNG as a
-  reference image. This is the closest analog to Midjourney's `--sref`
-  we can get on a free API, and it is the load-bearing primitive for
+Why this choice (and why not the previously-named Google
+`gemini-2.5-flash-image`):
+- **First-class transparent backgrounds.** `gpt-image-1` accepts
+  `background: "transparent"` and returns a real alpha channel. Gemini
+  treats transparency as prompt-driven, which means an unreliable
+  alpha-cut post-processing step on every asset. The OpenAI native
+  alpha removes a whole class of failure modes for sprite work.
+- **Image-reference inputs are first-class** via the `/v1/images/edits`
+  endpoint. After the bird is approved, every later asset request
+  passes the bird PNG as a reference image. This is the closest analog
+  to Midjourney's `--sref` and is the load-bearing primitive for
   cohesion across our three sprites and beyond.
-- Same HTTP-call shape we'd use for any image API. No SDK required.
+- The Gemini free tier turned out unusable for us in practice — a real
+  429 from the live `gemini-2.5-flash-image` endpoint on a single
+  generation call, even though Google AI Studio's docs advertise a
+  generous free tier. We're done planning around a free tier we can't
+  actually use.
+- No SDK — plain `fetch` against the documented HTTP API.
 
 Tradeoffs accepted:
-- Transparent backgrounds are prompt-based, not a first-class request
-  parameter. Usually works; may occasionally need an alpha-cut
-  post-processing step (one ImageMagick call or a `sharp` invocation).
-- Output is 1024×1024 (model default). Phaser scales down to display
-  size. We trust the bilinear filter at this scale.
-- The Gemini image API schema (exact endpoint, field names, response
-  shape) evolves. The agent should verify against
-  https://ai.google.dev/gemini-api/docs/image-generation before the
-  first generation call of any new slice.
+- Paid. Roughly **$0.011 / low**, **$0.042 / medium**, **$0.167 / high**
+  per 1024×1024 image (April 2026 pricing). A full slice with three
+  bird variants at medium plus one iteration round is on the order of
+  ~$0.75. Cheap enough that we stop optimizing and generate.
+- Output is 1024×1024 (model default for square). Phaser scales down to
+  display size. We trust the bilinear filter at this scale.
+- The OpenAI Images API schema (endpoint, field names, response shape)
+  evolves and `gpt-image-1` is currently marked deprecated in OpenAI's
+  own model catalog (still serving). The agent should verify against
+  https://developers.openai.com/api/docs/guides/image-generation
+  before the first generation call of any new slice.
 
-Get the API key (free): https://aistudio.google.com/apikey
+Get the API key: https://platform.openai.com/api-keys
 
-Reconsider this pick at Rung 4 (one scripted house, dozens of assets)
-when consistency-at-scale and per-character identity start mattering
-more than cost. Alternatives to weigh then:
-- Midjourney via Chrome MCP — best `--sref`, no public API, manual loop
+Recraft remains the named Rung-4 successor candidate (one scripted
+house, dozens of assets) when first-class style sets and
+consistency-at-scale start mattering more than per-image cost.
+Alternatives to weigh then:
 - Recraft — API plus first-class style sets
-- OpenAI gpt-image-1 — cleaner transparent backgrounds, paid (no
-  free tier, ~$0.17 per high-quality 1024×1024)
+- Midjourney via Chrome MCP — best `--sref`, no public API, manual loop
 - FLUX via Replicate — cheapest API option, supports LoRAs for
   per-character identity
 
 ## API key storage
 
 For local agent runs (Claude Code on Matthew's desktop): the agent
-reads the key from `$env:GEMINI_API_KEY`. Set it once as a User-scope
+reads the key from `$env:OPENAI_API_KEY`. Set it once as a User-scope
 environment variable so child processes — including Claude Code's
 tool shells — inherit it:
 
 ```powershell
-[Environment]::SetEnvironmentVariable("GEMINI_API_KEY", "<key from aistudio.google.com/apikey>", "User")
+[Environment]::SetEnvironmentVariable("OPENAI_API_KEY", "<key from platform.openai.com/api-keys>", "User")
 ```
 
 Restart any running Claude Code session after setting it. Environment
@@ -105,20 +112,21 @@ Actions workflows later), the key is also stored as repo secrets:
   cloud agent to see it (the Agents bucket is separate from Actions
   and was added in May 2026). As of that release `gh secret set`
   does NOT support `--app agents`, so use the web UI.
-- **Actions secret** — `gh secret set GEMINI_API_KEY` from desktop,
+- **Actions secret** — `gh secret set OPENAI_API_KEY` from desktop,
   or repo Settings → Secrets and variables → Actions. Accessed in
-  workflows as `${{ secrets.GEMINI_API_KEY }}`. Required for any
+  workflows as `${{ secrets.OPENAI_API_KEY }}`. Required for any
   PR-comment-triggered regen workflow we add later.
 
 Both repo secrets and the local User env var hold the same value
-(the same key string from AI Studio). Rotate together if/when needed.
+(the same key string from platform.openai.com). Rotate together if/when
+needed.
 
 ## Consistency engine
 
 We lock everything we can in the request itself:
 
-- **Model.** `gemini-2.5-flash-image`. Don't switch mid-slice. A new
-  model is a new prompt-library experiment.
+- **Model.** `gpt-image-1`. Don't switch mid-slice. A new model is a
+  new prompt-library experiment.
 - **House style block.** Prepended verbatim to every prompt. Always.
 - **Palette.** Hex codes repeated in every prompt.
 - **Negative phrases block.** Appended verbatim to every prompt.
@@ -146,71 +154,89 @@ silhouette reads clearly at small size on a phone screen.
 Append this clause verbatim at the end of every prompt:
 
 ```
-Single subject only, output as a PNG with a fully transparent
-background (no solid color behind the subject), no text, no
+Single subject only, isolated on a transparent background, no text, no
 watermark, no signature, no busy background, no photorealism, no 3D
 rendering, no modern visual style.
 ```
 
+(Transparency is enforced by the `background: "transparent"` request
+parameter; the negative clause is belt-and-braces.)
+
 ## Request shape
 
-The agent calls the Gemini image API directly. Schema below is current
-as of 2026-05; agent must verify against the live docs before each
-slice's first call.
+The agent calls the OpenAI Images API directly via `fetch`. Schema
+below is current as of 2026-05; agent must verify against the live
+docs at https://developers.openai.com/api/docs/guides/image-generation
+before each slice's first call.
 
 ### First asset (no reference yet — the bird)
 
 ```jsonc
-// POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent
-// Header: x-goog-api-key: $GEMINI_API_KEY
+// POST https://api.openai.com/v1/images/generations
+// Headers:
+//   Authorization: Bearer $OPENAI_API_KEY
+//   Content-Type:  application/json
 {
-  "contents": [
-    {
-      "parts": [
-        { "text": "<house style block> <subject prompt v1> <negative phrases block>" }
-      ]
-    }
-  ]
+  "model": "gpt-image-1",
+  "prompt": "<house style block> <subject prompt v1> <negative phrases block>",
+  "size": "1024x1024",
+  "quality": "medium",
+  "background": "transparent",
+  "output_format": "png",
+  "n": 1
 }
 ```
 
-The response contains a base64-encoded PNG inside
-`candidates[0].content.parts[*].inline_data.data`. Decode and save.
+The response contains a base64-encoded PNG inside `data[0].b64_json`.
+Decode and save. (`gpt-image-1` always returns base64 — there is no
+URL-mode for this model.)
 
 ### Subsequent assets (using the approved bird as a style reference)
 
-```jsonc
-{
-  "contents": [
-    {
-      "parts": [
-        { "inline_data": { "mime_type": "image/png", "data": "<base64 of public/assets/bird.png>" } },
-        { "text": "Match the visual style of the reference image exactly: same linework weight, same paper grain, same palette, same level of stylization. <house style block> <subject prompt> <negative phrases block>" }
-      ]
-    }
-  ]
-}
+Switch to the `/v1/images/edits` endpoint and pass the approved bird
+PNG as the `image[]` part. The request is `multipart/form-data`:
+
+```
+POST https://api.openai.com/v1/images/edits
+Headers:
+  Authorization: Bearer $OPENAI_API_KEY
+  Content-Type:  multipart/form-data; boundary=...
+
+Fields:
+  model           = gpt-image-1
+  image[]         = @public/assets/bird.png    (style/composition reference)
+  prompt          = Match the visual style of the reference image
+                    exactly: same linework weight, same paper grain,
+                    same palette, same level of stylization.
+                    <house style block> <subject prompt> <negative phrases block>
+  size            = 1024x1024
+  quality         = medium
+  background      = transparent
+  output_format   = png
+  n               = 1
 ```
 
 The reference image is the entire cohesion mechanism for assets 2+.
-Don't skip it.
+Don't skip it. (`/v1/images/edits` originally meant "inpaint with a
+mask," but with no `mask` field and `gpt-image-1`, the model treats
+`image[]` as a style/composition reference for a brand-new generation.)
 
 ### Generating variants
 
-To get three variants, call the same request three times. Save the
+To get three variants, call the same request three times (with the
+same prompt; the model samples differently each call). Save the
 results as `<asset>-v1-a.png`, `-b.png`, `-c.png` under
 `public/assets/`.
 
-### Transparent background fallback
+### Transparent background
 
-If a returned PNG has a near-cream-not-actually-transparent background,
-post-process with one of:
-- `magick convert in.png -fuzz 5% -transparent "#f1e7d0" out.png`
-- A `sharp` call that thresholds the alpha channel.
+`gpt-image-1` with `background: "transparent"` returns a real alpha
+channel. No chroma-key post-processing, no `sharp`, no ImageMagick.
 
-Don't ship an asset with a solid background. If post-processing keeps
-failing on a given prompt, adjust the negative phrases block in this
-doc (don't override per-prompt) so the change is durable.
+If a returned PNG still has a solid background, the most likely cause
+is the `model` field accidentally being something other than
+`gpt-image-1` (older models don't support `background: "transparent"`).
+Fix the request, not the image.
 
 ## Prompt library
 

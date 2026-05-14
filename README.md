@@ -13,7 +13,7 @@
 Two parallel goals:
 
 1. **Ship a fun Flappy Bird clone** that anyone can play in a browser without installing anything.
-2. **Learn how to build software with AI agents doing the typing.** Matthew is a senior C# developer who wants to operate as a director, not a coder, for this project. Every workflow choice (vertical slices, TDD, screenshot evidence on every PR, the issue/PR templates, AGENTS.md, the "no self-merge" rule) is in service of that goal.
+2. **Learn how to build software with AI agents doing the typing.** Matthew is a senior C# developer who wants to operate as a director, not a coder, for this project. Every workflow choice (vertical slices, TDD, local-only Playwright e2e, the issue/PR templates, AGENTS.md, the "no self-merge" rule) is in service of that goal.
 
 If you're a human dev or an AI agent picking this up: **read [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) before reading any code.** They are short, specific, and authoritative.
 
@@ -25,7 +25,7 @@ If you're a human dev or an AI agent picking this up: **read [CLAUDE.md](CLAUDE.
 npm install
 npm run dev         # http://localhost:5173
 npm run test        # Vitest unit tests
-npm run test:e2e    # Playwright: builds, previews, screenshots
+npm run test:e2e    # Playwright (local-only): builds, previews, drives the canvas
 npm run build       # production build into dist/
 npm run lint        # Biome lint + format check
 npm run format      # Biome auto-format
@@ -52,17 +52,18 @@ Agent reads AGENTS.md + CLAUDE.md + the issue
        │
        ▼
 Agent branches from main, writes a failing test first,
-implements the smallest change to make it pass, pushes a draft PR
+implements the smallest change to make it pass, runs Playwright e2e locally,
+pushes a draft PR
        │
        ▼
-CI runs: lint → unit tests → Playwright (headless gameplay + screenshot)
+CI runs: lint → unit tests. (Playwright e2e is local-only.)
        │
        ▼
 Agent waits for green CI, then marks PR Ready for review and tags @MatthewMuir-MLI
        │
        ▼
-Matthew reviews on phone (the captured Playwright screenshot is attached as an artifact),
-merges if satisfied or comments for iteration. Agents NEVER merge their own PR.
+Matthew reviews on phone. Merges if satisfied or comments for iteration.
+Agents NEVER merge their own PR.
        │
        ▼
 Merge to main triggers auto-deploy to https://matthewmuir-mli.github.io/FlappyBird/
@@ -98,8 +99,8 @@ FlappyBird/
 │       └── MainScene.ts
 │
 ├── tests/
-│   ├── unit/                     # Vitest. Tests for src/core/.
-│   └── e2e/                      # Playwright. Drives the rendered game, captures screenshots.
+│   ├── unit/                     # Vitest. Tests for src/core/. Runs on CI.
+│   └── e2e/                      # Playwright. Drives the rendered game. Local-only.
 │
 ├── public/                       # Static assets served as-is (sprites, audio in later slices).
 │
@@ -109,7 +110,7 @@ FlappyBird/
 │   └── NEW_SESSION_PROMPT.md     # Paste into a new Claude Code session to bootstrap it.
 │
 ├── .github/
-│   ├── workflows/ci.yml          # 4 jobs: test, screenshot, build-pages, deploy-pages.
+│   ├── workflows/ci.yml          # 3 jobs: test, build-pages, deploy-pages.
 │   ├── pull_request_template.md  # Standards checklist auto-applied to new PRs.
 │   └── ISSUE_TEMPLATE/
 │       ├── slice.yml             # Forms-style intake for slice issues.
@@ -155,7 +156,7 @@ override update(_time, deltaMs) {
 - **TDD non-negotiable.** Failing test first. Always.
 - **Vertical slices, never horizontal.** One PR ships one thin end-to-end path.
 - **No self-merge.** Matthew merges from his phone.
-- **Every PR ships a screenshot** (the Playwright `gameplay-screenshot` artifact).
+- **Playwright e2e runs locally before pushing.** CI does not run e2e.
 - **No emoji** in code, commits, or PR titles unless Matthew asks for them.
 - **No "AI generated" footers.**
 - **No new dependencies** without justification in the PR description.
@@ -171,10 +172,12 @@ override update(_time, deltaMs) {
 
 ## Testing strategy
 
-| Layer | Tool | Speed | What it covers |
-|---|---|---|---|
-| Pure logic (`src/core/`) | Vitest | <1s for full suite | Physics, scoring, state machines, collision math |
-| Rendered game | Playwright (headless Chromium) | ~15s incl. build | Inputs reach scene, scene renders, screenshots |
+| Layer | Tool | Where it runs | Speed | What it covers |
+|---|---|---|---|---|
+| Pure logic (`src/core/`) | Vitest | CI + local | <1s for full suite | Physics, scoring, state machines, collision math |
+| Rendered game | Playwright (headless Chromium) | **Local only** (`npm run test:e2e`) | ~15s incl. build | Inputs reach scene, scene renders, state attrs publish correctly |
+
+Agents must run `npm run test:e2e` locally before pushing a slice PR. CI does not run e2e — it would push every PR's wall-clock to >1 minute and the value didn't justify the wait. The local pass is the only enforcement.
 
 **Exposing game state to Playwright:** scenes publish key state as `data-*` attributes on the canvas. Example: `MainScene` writes `data-bird-y` every frame. Playwright reads it via `page.locator('canvas').getAttribute('data-bird-y')`. This is the canonical pattern for new headless tests — avoid `window.__game` style leaks.
 
@@ -184,14 +187,15 @@ override update(_time, deltaMs) {
 
 ## CI / Deploy
 
-Workflow file: [.github/workflows/ci.yml](.github/workflows/ci.yml). Four jobs:
+Workflow file: [.github/workflows/ci.yml](.github/workflows/ci.yml). Three jobs:
 
 | Job | Runs on | Purpose |
 |---|---|---|
 | `Unit tests` | every push + PR | Biome + Vitest |
-| `Headless gameplay screenshot` | every push + PR | Playwright; uploads `gameplay-screenshot` artifact |
-| `Build for GitHub Pages` | `main` only, after the above pass | `npm run build` into `dist/`, upload Pages artifact |
+| `Build for GitHub Pages` | `main` only, after unit tests pass | `npm run build` into `dist/`, upload Pages artifact |
 | `Deploy to GitHub Pages` | `main` only, after build | `actions/deploy-pages@v4` |
+
+Playwright e2e is intentionally not on CI — see Testing Strategy above.
 
 GitHub Pages is configured with `build_type=workflow` (deployed by Actions, not from a `gh-pages` branch). The live URL is https://matthewmuir-mli.github.io/FlappyBird/.
 

@@ -5,7 +5,7 @@ Our take on Flappy Bird. Web game published to GitHub Pages. No ads, no microtra
 ## Stack
 - **Engine:** Phaser 4 (TypeScript). 2D, web-native, MIT.
 - **Build:** Vite.
-- **Tests:** Vitest (unit) + Playwright (headless gameplay + screenshots).
+- **Tests:** Vitest (unit, runs on CI) + Playwright (headless gameplay, local-only).
 - **Lint/format:** Biome.
 - **Hosting:** GitHub Pages, deployed by CI on merge to `main`.
 - **Target:** modern browsers (mobile + desktop). Phone is the primary play surface.
@@ -22,20 +22,19 @@ Every change ships a working, testable thin path through the stack — input →
 - No gameplay code without a failing test first.
 - Tests live next to the system they exercise.
 - Pure logic goes in `src/core/` (no Phaser imports) so it's unit-testable with Vitest.
-- Playwright drives the rendered game in a headless Chromium browser and captures screenshots. Frames get attached to the PR.
+- Playwright drives the rendered game in a headless Chromium browser. It runs locally only (`npm run test:e2e`); CI runs unit tests only. Agents must run e2e locally before pushing a slice PR.
 
 ### Branches and PRs
 - `main` is always shippable; merging to `main` auto-deploys to GitHub Pages.
 - Feature branches only: `feat/<short-name>`, `fix/<short-name>`, `chore/<short-name>`.
 - [Conventional Commits](https://www.conventionalcommits.org/).
 - **No agent merges its own PR.** Matthew merges from his phone.
-- Every PR must include a captured gameplay screenshot or GIF from the headless Playwright run.
 
 ### What "done" means for a slice
 1. Failing test written first.
 2. Test passes.
-3. CI is green: lint + unit tests + Playwright + Pages build.
-4. PR description includes a screenshot or GIF of the change running.
+3. Agent ran `npm run test:e2e` locally and it passed.
+4. CI is green: lint + unit tests + Pages build.
 5. Matthew merged it.
 6. The deployed page at https://matthewmuir-mli.github.io/FlappyBird/ reflects the change.
 
@@ -60,7 +59,7 @@ FlappyBird/
     AESTHETIC.md       # Matthew's art direction
     SLICES.md          # log of completed vertical slices
   .github/
-    workflows/         # CI: lint, test, Playwright, Pages deploy
+    workflows/         # CI: lint, unit tests, Pages deploy
 ```
 
 ## Standards
@@ -83,8 +82,8 @@ If a future slice wants any of the above, it gets filed as a GitHub Issue — we
 
 ## Build and review loop
 1. Matthew picks an open GitHub Issue labeled `slice` and assigns it to an agent (default: Claude Code via the mobile app driving the desktop session; `@copilot` as fallback).
-2. Agent branches from `main`, TDD-implements the slice, opens a draft PR linking the issue.
-3. GitHub Actions runs lint + unit tests + Playwright. Playwright uploads `gameplay-screenshot` as an artifact.
+2. Agent branches from `main`, TDD-implements the slice, runs `npm run test:e2e` locally, opens a draft PR linking the issue.
+3. GitHub Actions runs lint + unit tests. (Playwright is local-only; CI does not run it.)
 4. When CI is green, the agent marks the PR ready and requests review from Matthew.
 5. Matthew reviews on phone, comments, merges or sends feedback. Agents never self-merge.
 6. The merge auto-closes the issue (via `Closes #N`) and the agent appends a "Shipped" entry to `docs/SLICES.md` in its final commit.

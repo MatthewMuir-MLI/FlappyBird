@@ -23,8 +23,8 @@ body:
       value: |
         - [ ]
         - [ ]
+        - [ ] `npm run test:e2e` passes locally (CI does not run e2e)
         - [ ] CI green
-        - [ ] Screenshot or GIF attached to the PR from the captured CI run
     validations:
       required: true
   - type: textarea

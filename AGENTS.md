@@ -13,6 +13,7 @@ You are an AI coding agent (Claude Code, GitHub Copilot Coding Agent, or similar
 - Node 22 LTS in CI; any recent Node locally is fine.
 - `src/core/` is pure logic with no Phaser imports — unit-testable with Vitest.
 - `src/scenes/` is the Phaser side. Each scene wires Core state to the rendered canvas.
+- **CI runs unit tests only.** Playwright e2e runs locally (`npm run test:e2e`); agents must run it before pushing a slice PR.
 
 ## How tasks flow
 - **Backlog lives in GitHub Issues**, not in `SLICES.md`. Issues labeled `slice` are the queue. Pick the oldest open issue assigned to you, or the one explicitly named in your prompt.
@@ -23,10 +24,10 @@ You are an AI coding agent (Claude Code, GitHub Copilot Coding Agent, or similar
 1. Branch from `main`. Name: `feat/slice-N-short-name`, `fix/short-name`, or `chore/short-name`.
 2. **Write a failing test first.** Unit logic -> `tests/unit/*.test.ts` (Vitest). Anything that involves the rendered scene -> `tests/e2e/*.spec.ts` (Playwright).
 3. Implement the smallest change that makes the test pass. Pure logic in `src/core/`, rendering / input wiring in `src/scenes/`.
-4. Run locally:
+4. Run locally before pushing — all three must pass:
    - `npm run lint` (Biome)
    - `npm run test` (Vitest)
-   - `npm run test:e2e` (Playwright — builds, previews on port 4173, screenshots)
+   - `npm run test:e2e` (Playwright — builds, previews on port 4173). CI does not run e2e; this local pass is the only enforcement.
 5. Commit with [Conventional Commits](https://www.conventionalcommits.org/). Example: `feat(slice-4): bird falls under gravity`.
 6. Open a **draft PR** targeting `main`. Use the PR template. Link the issue with `Closes #N`.
 7. Wait for CI. If red, fix and push again — do not mark ready while red.

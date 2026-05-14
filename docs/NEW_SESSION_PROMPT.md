@@ -23,13 +23,14 @@ Before doing anything else, please:
 4. Do not start work on a slice until I explicitly say "go on #N". When I do, use Plan Mode (Shift+Tab Shift+Tab) for any non-trivial slice before writing code.
 
 A few orientation points so you don't have to dig for them:
-- Stack: Phaser 3 + TypeScript + Vite + Vitest + Playwright + Biome. Deploys to GitHub Pages.
+- Stack: Phaser 4 + TypeScript + Vite + Vitest + Playwright + Biome. Deploys to GitHub Pages.
 - Live URL: https://matthewmuir-mli.github.io/FlappyBird/.
 - Pure logic in src/core/ (no `import phaser`). Phaser scenes in src/scenes/ wire core state to the canvas.
 - Test infrastructure pattern: scenes publish state to canvas `data-*` attributes; Playwright reads them.
+- CI runs unit tests only. Playwright e2e is local-only — run it before pushing every slice PR.
 - Branch naming: `feat/slice-N-short-name`. Open as draft PR. Mark ready when CI green. Never self-merge.
 
-I drive you remotely from the Claude Code mobile app most of the time. Optimize for "Matthew can review this on a phone screen": tight commits, clear PR descriptions, screenshots inline where possible.
+I drive you remotely from the Claude Code mobile app most of the time. Optimize for "Matthew can review this on a phone screen": tight commits, clear PR descriptions.
 ```
 
 ---

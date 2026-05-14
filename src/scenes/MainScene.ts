@@ -18,10 +18,14 @@ const PIPE_WIDTH = 80;
 const PIPE_GAP_HEIGHT = 270;
 const PIPE_COLOR = 0x2e8b57;
 
+// World scrolls 1 second before the first pipe enters the canvas so the player
+// isn't forced to react immediately on start.
+const FIRST_PIPE_DELAY_PX = 400;
+
 const CONSTANTS: GameConstants = {
   gravity: 1500,
   pipeSpeed: 400,
-  pipeSpawnDistance: 280,
+  pipeSpawnDistance: 500,
   canvasWidth: CANVAS_WIDTH,
   canvasHeight: CANVAS_HEIGHT,
   pipeWidth: PIPE_WIDTH,
@@ -46,10 +50,13 @@ export class MainScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.gameState = initialGameState({
-      position: { ...BIRD_START },
-      velocity: { x: 0, y: 0 },
-    });
+    this.gameState = initialGameState(
+      {
+        position: { ...BIRD_START },
+        velocity: { x: 0, y: 0 },
+      },
+      FIRST_PIPE_DELAY_PX
+    );
     this.birdFrame = 0;
     this.pipeSprites.clear();
 

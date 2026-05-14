@@ -22,12 +22,12 @@ export interface GameConstants {
   pipeGapYMax: number;
 }
 
-export function initialGameState(bird: BirdState): GameState {
+export function initialGameState(bird: BirdState, pixelsUntilFirstSpawn = 0): GameState {
   return {
     bird,
     pipes: [],
     pipesSpawned: 0,
-    pixelsUntilNextSpawn: 0,
+    pixelsUntilNextSpawn: pixelsUntilFirstSpawn,
     gameOver: false,
   };
 }

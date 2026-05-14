@@ -24,22 +24,36 @@ function makeBird(x: number, y: number): BirdState {
 }
 
 describe('initialGameState', () => {
-  it('starts with no pipes, no game-over, and spawn timer at zero', () => {
+  it('starts with no pipes, no game-over, and spawn timer at zero by default', () => {
     const state = initialGameState(makeBird(270, 240));
     expect(state.pipes).toEqual([]);
     expect(state.pipesSpawned).toBe(0);
     expect(state.pixelsUntilNextSpawn).toBe(0);
     expect(state.gameOver).toBe(false);
   });
+
+  it('honours a pixelsUntilFirstSpawn delay for the first pipe', () => {
+    const state = initialGameState(makeBird(270, 240), 400);
+    expect(state.pixelsUntilNextSpawn).toBe(400);
+  });
 });
 
 describe('step', () => {
-  it('spawns the first pipe at canvas right edge on the very first tick', () => {
+  it('spawns the first pipe at canvas right edge on the very first tick when no delay is set', () => {
     const state = step(initialGameState(makeBird(270, 240)), 1 / 60, CONSTANTS);
     expect(state.pipes).toHaveLength(1);
     expect(state.pipes[0]?.id).toBe(0);
     expect(state.pipes[0]?.top.x).toBe(540);
     expect(state.pipesSpawned).toBe(1);
+  });
+
+  it('defers the first spawn while pixelsUntilFirstSpawn remains positive', () => {
+    let state = initialGameState(makeBird(270, 240), 400);
+    // 400 px buffer at 400 px/s == 1 s == 60 frames at 60 fps. First spawn lands on frame 60.
+    for (let i = 0; i < 59; i++) state = step(state, 1 / 60, CONSTANTS);
+    expect(state.pipes).toHaveLength(0);
+    state = step(state, 1 / 60, CONSTANTS);
+    expect(state.pipes).toHaveLength(1);
   });
 
   it('spawns additional pipes as the world scrolls', () => {

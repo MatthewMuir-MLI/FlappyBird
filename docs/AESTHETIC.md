@@ -244,12 +244,12 @@ Each entry follows the same shape so we can compare across runs.
 
 ### 1. Bird (Slice 7 — first asset)
 
-**Status:** prompt drafted, not yet generated.
+**Status:** approved (`v1-b`).
 
 **Target:** transparent PNG of the player bird, side profile, wings
 mid-flap. Source 1024×1024; Phaser scales to ~96 px display.
 
-**Subject prompt v1:**
+**Subject prompt v1 (the one that worked):**
 
 ```
 A small plump cartoon bird, shown in side profile, wings spread
@@ -259,16 +259,35 @@ wing-tips. Heavy black outline. Reads as a friendly, lively character.
 ```
 
 **Full prompt sent:** house style block + subject prompt v1 + negative
-phrases block.
+phrases block (840 chars total).
+
+**Params on the approved run:**
+- Endpoint: `POST /v1/images/generations`
+- Model: `gpt-image-1`
+- Size: 1024×1024
+- Quality: `medium`
+- Background: `transparent`
+- Output: `png`
+- n: 1 per call, called three times for variants
 
 **Iteration log:**
-- v1 — drafted, not yet run.
+- v1 — three medium-quality variants generated; `v1-b` chosen
+  (two-tone oxblood back + cream belly with olive-yellow accents
+  on wings and chest; reads most "period-illustrated" of the three,
+  uses three of the four house palette colors). `v1-a` and `v1-c`
+  rejected and removed in the rename commit.
 
-**Params recorded on first successful run:**
-- Output files: TBD (`bird-v1-a.png`, `-b`, `-c`)
-- Chosen variant: TBD
-- Final filename: `public/assets/bird.png`
-- Status: drafted / generated / approved / rejected
+**Output:** `public/assets/bird.png` (chosen). Reused as the style
+reference for every later asset in this slice via
+`/v1/images/edits`.
+
+**Known v1 quirk to consider for future assets:** the model rendered
+a faint secondary "sticker edge" around each bird outline, likely
+from the negatives block phrase "isolated on a transparent
+background." If it shows up on the pipe or prop and reads as
+noise at display size, suppress with an explicit "no sticker
+border, no die-cut edge, no double outline" addition to the
+negatives block.
 
 ### 2. Pipe (Slice 7)
 

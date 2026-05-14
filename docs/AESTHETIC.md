@@ -289,9 +289,9 @@ noise at display size, suppress with an explicit "no sticker
 border, no die-cut edge, no double outline" addition to the
 negatives block.
 
-### 2. Pipe (Slice 7)
+### 2. Pipe (Slice 7, regen round v2)
 
-**Status:** approved (`v1-c`).
+**Status:** approved (`v2-a`, superseded the v1 olive-green column).
 
 **Target:** tall vertical obstacle, transparent PNG. Generate at
 1024×1024; Phaser scales / crops to the in-game aspect. We trust
@@ -313,17 +313,43 @@ passed as the `image[]` reference, plus the "match the visual style
 of the reference image exactly" preamble. Same model / size / quality
 / background / output as the bird.
 
+**Subject prompt v2 (current — replaced v1 after Matthew asked for a stone pillar instead of an olive-green column):**
+
+```
+A tall vertical stone obstacle pillar with a flared decorative cap at one end, in Belle-Epoque poster style. Carved limestone body in warm cream and olive-gray tones, with ivory edge highlights and a restrained oxblood accent band where the cap flares. Heavy black outline and subtle aged-stone texture. Keep the silhouette simple and legible at small phone size. The pillar stem must tile cleanly when stacked vertically with no pedestal or base.
+```
+
+The v2 prompt was drafted by Copilot Coding Agent on PR #59 and used
+verbatim — it correctly carried forward the Slice 7 lesson about
+gameplay-driven tiling ("no pedestal or base") that was in
+`docs/SLICES.md`. Worth knowing the lesson-propagation worked: a
+downstream agent picked up an earlier round's deferred-list item
+without being told to.
+
 **Iteration log:**
 - v1 — three medium-quality variants generated; `v1-c` chosen (tall
-  flared cap with oxblood neck band, no pedestal base; the only one
-  of the three that's tile-friendly for off-screen-bottom extension).
-  `v1-a` and `v1-b` had decorative pedestals — read fine as ornaments
-  but break the "infinite stem" illusion the game needs.
+  flared olive-green cap with oxblood neck band, no pedestal base;
+  the only one of the three that was tile-friendly for off-screen-
+  bottom extension). `v1-a` and `v1-b` had decorative pedestals —
+  read fine as ornaments but broke the "infinite stem" illusion the
+  game needs. Shipped on PR #55, then superseded by v2.
+- v2 — Matthew asked for a stone pillar instead of the olive-green
+  column. Three medium-quality variants generated locally (Copilot
+  Coding Agent could not access `OPENAI_API_KEY` from the Agents
+  bucket — known GitHub bug, see project memory). `v2-a` chosen:
+  sharp Doric-style flat cap, lightest weathering, slight base
+  flare. `v2-b` (more articulated multi-tier neck) and `v2-c`
+  (no-pedestal flat cap, most tile-friendly) rejected on aesthetics
+  even though `c` was the most gameplay-correct choice — Matthew
+  prioritized the period-poster character over the pure
+  no-pedestal silhouette.
 
-**Output:** `public/assets/pipe.png` (chosen). Lesson for future
-asset prompts: when an asset has gameplay-driven tiling requirements,
-state them in the subject prompt explicitly, not just in the doc
-prose around it.
+**Output:** `public/assets/pipe.png` (chosen). Note: the v2-a base
+flare is subtle but present. In normal gameplay the bottom of the
+bottom-pipe is at or near the canvas bottom so the flare reads as
+"column meeting ground" and looks fine. If we ever scroll pipes
+through visible negative space below the gap, this would need a
+Phaser crop or a v3 round.
 
 **Cohesion check:** the bird-as-reference mechanism held. All three
 pipe variants kept the bird's olive-yellow body, oxblood accent,

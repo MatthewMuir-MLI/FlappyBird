@@ -18,6 +18,23 @@ Slice format:
 
 ## Shipped
 
+### chore — Pipe regen v2 (stone pillar)
+**Shipped:** 2026-05-14, PR #59
+**What:** Replaced the v1 olive-green column with a stone pillar (`v2-a`: sharp Doric-style flat cap, lightest weathering of three variants, slight base flare). Same texture key (`pipe`) and same Phaser display dimensions, so this is a pure asset swap — no code or test changes. Documented in `docs/AESTHETIC.md` § Prompt library § 2. Pipe.
+
+**The agentic-workflow story:** Matthew opened issue #58 ("change the PNG for pillar/pipe") from phone and assigned `@copilot`. Copilot picked it up, read the regen-asset playbook in `AGENTS.md` (added in PR #57), wrote a stone-pillar prompt at `scripts/prompts/pipe-v2.txt` that correctly carried forward the prior round's "no pedestal" lesson without being told to, ran the generation script, and hit a hard env-var error: `OPENAI_API_KEY is not set in the environment.` despite the secret being present in the Agents bucket. After two retries produced the identical error, the local-fallback path documented in `AGENTS.md` § Asset regeneration took over — checked out Copilot's branch on the desktop, ran the script with the locally-present key, committed the three variants on top of Copilot's prompt commits, comment-picked from phone (`pipe: a`), shipped.
+
+**Learned:**
+- **GitHub Copilot Coding Agent doesn't reliably expose Agents-bucket secrets to `process.env`** as of May 2026. Multiple open community discussions (#160030, #164968, #177690, #165053) report the same class of failure. The docs say Agents-bucket secrets auto-expose; in practice they often don't. There is no separate Coding Agent allow-list to fix this — the only Copilot Coding Agent settings page is Internet access / Policies / Validation tools / MCP configuration. Logged in project memory as `feedback_copilot_agents_secrets.md`.
+- **The local-fallback path documented in `AGENTS.md` § Asset regeneration worked exactly as drafted.** Copilot did its non-secret work (prompt edit, defensive halt with verbatim error reporting), and the handoff to a local-run shell on Copilot's branch was a clean two-command operation (`git checkout`, `node scripts/generate-sprite.mjs`). The agentic-workflow loop didn't break — it degraded gracefully to "one machine, one phone, same picker UX."
+- **Lesson propagation between rounds worked.** Copilot read Slice 7's deferred-list item about gameplay-driven tiling from `docs/SLICES.md` and embedded "no pedestal or base" directly in the v2 subject prompt without being asked. That's the kind of cross-round learning the SLICES.md log was meant to enable.
+
+**Deferred:**
+- File a follow-up tech-debt issue investigating the Copilot env-var injection bug (or wait for GitHub to fix the open community threads). Not blocking — local-fallback works fine.
+- The v2-a base flare is subtle but present. If a future slice scrolls pipes through visible negative space below the gap (currently they don't), this needs a Phaser crop or a v3 round.
+
+---
+
 ### Slice 7 — Three sprites, real art
 **Goal:** Replace placeholder rectangles with three AI-generated sprites (bird, pipe, background prop) matching the prompt library in `docs/AESTHETIC.md`.
 **Shipped:** 2026-05-14, PR #55

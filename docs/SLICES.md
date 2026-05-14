@@ -18,6 +18,35 @@ Slice format:
 
 ## Shipped
 
+### Slice 6 — Endless pipes
+**Goal:** Pipes spawn continuously with varied gap heights; off-screen pipes are despawned; active pipe count stays bounded.
+**Shipped:** 2026-05-14, PR #40
+**What's in it:**
+- `src/core/pipe.ts` — `Pipe` carries `id`. New `nextGapY(index, min, max)` is a pure deterministic gap-y selector: index 0 returns 240 (the bird's start y — onboarding pipe), index >= 1 uses a non-resonant sine over `[min, max]`.
+- `src/core/gameState.ts` — single `pipe` becomes `pipes: Pipe[]`. State adds `pipesSpawned` and `pixelsUntilNextSpawn` to drive cadence. Constants add `pipeSpawnDistance` (280), `canvasWidth/Height`, `pipeWidth/GapHeight`, `pipeGapYMin/Max` (200/760). New `initialGameState(bird)` helper. `step` advances all pipes, decrements the spawn counter, spawns when it hits zero, despawns pipes off the left edge, and checks collision against every active pipe.
+- `src/scenes/MainScene.ts` — sprite map keyed by pipe id (not array index) so despawning the front pipe doesn't reassign visuals. Publishes `data-pipe-count` on the canvas.
+- `tests/unit/pipe.test.ts` — id-aware spawn/step tests + 3 cases for `nextGapY`.
+- `tests/unit/gameState.test.ts` — rewritten for the new shape: initial state, first-tick spawn, multi-pipe spawn over time, off-screen despawn, bounded count over 10s, collision against any pipe, freeze on game-over.
+- `tests/e2e/endless-pipes.spec.ts` — polls `data-pipe-count >= 2` within 4s while reactive-flapping.
+- `tests/e2e/pipe-collision.spec.ts` — flap-survives spec shortened to `frame > 50` so it doesn't run into the second pipe (whose sine-driven gap would collide with a bird hovering at y=240).
+
+**Verified:**
+- CI green on PR #40 (Unit tests 28/28).
+- Local: `npm run test:e2e` 5/5; `npm run build` clean.
+
+**Learned:**
+- **Sprite-to-state identity matters when arrays shrink from the front.** Tracking pipe sprites by `pipe.id` in a `Map` is cheap and avoids a class of "the wrong sprite moves" bugs that index-based sync would introduce as soon as a pipe despawns.
+- **Onboarding bias > rewriting downstream tests.** Special-casing `nextGapY(0)` to the bird's start y kept slice 4's e2e specs alive without modification and produced better gameplay (free first pipe). The flap-stays-alive spec still needed a shorter window because the *second* pipe's sine-driven gap is hostile; that was a single-line fix.
+- **Pure spawn-cadence math is testable in milliseconds.** The "active pipe count stays bounded over 10s" unit test runs 600 step iterations and asserts a bound. No e2e equivalent would have been worth its cost.
+
+**Deferred:**
+- Difficulty curve / pipe speed-up over time.
+- Pipe visual variety — Slice 7 (sprites).
+- Scoring on pipe pass — Slice 5.
+- Tuning the sine multiplier for "feel" — wait for real gameplay sessions.
+
+---
+
 ### Slice 4 — One pipe and collision
 **Goal:** One pipe pair scrolls left, the bird collides with it via AABB overlap, and a `data-game-over` attribute on the canvas reflects the state. No visible game-over UI — Slice 9 owns that.
 **Shipped:** 2026-05-14, PR #37

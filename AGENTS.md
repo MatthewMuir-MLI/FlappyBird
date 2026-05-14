@@ -45,8 +45,21 @@ You are an AI coding agent (GitHub Copilot Coding Agent, Claude Code, or similar
 - If CI is failing for an environmental reason (not your code), say so explicitly — don't keep pushing.
 
 ## Tool-specific notes
-- **GitHub Copilot Coding Agent**: works from issues assigned to `@copilot`. Default agent for slice work.
-- **Claude Code**: used locally by Matthew for harder tasks where he's directing in real time. If you are Claude Code, prefer in-conversation Plan Mode for non-trivial slices.
+
+### Claude Code — default agent
+Runs on Matthew's Windows desktop. Matthew often drives it remotely from his phone via the Claude Code mobile app. It's the **default agent for slice work** on this project because it uses Opus 4.7 and produces noticeably stronger results than the Sonnet-class model behind GitHub Copilot Coding Agent.
+
+If you are Claude Code working on a slice:
+- Use Plan Mode (`Shift+Tab Shift+Tab`) before writing code on any non-trivial slice. Grill the plan with Matthew (or yourself, if running unattended) before exiting Plan Mode.
+- Verify locally before pushing: `dotnet test` and (when relevant) run the Godot scene under `--capture-screenshot`. CI is the second line of defense, not the first.
+
+### GitHub Copilot Coding Agent — fallback
+Works from issues assigned to `@copilot`. Runs in GitHub's cloud, fully async. Use it when Matthew specifically assigns an issue to `@copilot`, or for low-risk routine work where speed/asynchrony matters more than quality.
+
+If you are Copilot working on a slice:
+- Open a draft PR early so feedback can arrive while you iterate.
+- When a reviewer (Matthew) leaves a comment, address every point in a new commit before re-requesting review.
+- If the underlying repo state surprises you (e.g. expected files missing), comment on the PR and stop — don't push speculative fixes.
 
 ## What this repo is NOT
 See the "What we are explicitly NOT doing (yet)" section in [CLAUDE.md](CLAUDE.md). Do not add ads, analytics, multiplayer, accounts, IAP, or anything speculative. If you think the project needs one of those, file an issue — don't build it.

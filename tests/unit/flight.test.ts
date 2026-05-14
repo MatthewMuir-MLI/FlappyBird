@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { step, type BirdState, type PhysicsConstants } from '../../src/core/birdPhysics';
+import { type BirdState, type PhysicsConstants, step } from '../../src/core/birdPhysics';
 import { FLAP_VELOCITY, flap } from '../../src/core/flight';
 
 const constants: PhysicsConstants = { gravity: 1500 };
